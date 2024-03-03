@@ -1,0 +1,40 @@
+body { 
+    font-family: 'Roboto Mono', monospace;
+    font-size: 16px;
+    background: #505050;
+    color: #dddddd;
+    
+    display: grid;
+    /* Extra 2em around the content for border */
+    /* rot.js seems to want 10px for char width and 16px (1em) for height. So we'll
+       make the map area 80 chars wide and the inventory / status area 20 chars' worth:
+       (remembering the extra 16px / 1em on each for the border */
+    grid-template-columns: auto 816px 216px auto;
+    /* Height wise, rot.js is much nicer since it'll just use ems like it should. We
+       put 50 rows in, then add a further 8 for the log display */
+    grid-template-rows: 1em 41em 9em 2em;
+    height: 100vh;
+    margin: 0;
+}
+
+a { color: #9090ff; }
+a:visited { color: #ff9090; }
+
+.content {
+    grid-area: 2 / 2 / 4 / 4;
+    border: 1em solid #e4d8b4;
+    border-radius: 0.5em;
+    background: #1a1713;
+}
+
+.game { display: grid; }
+.map { grid-area: 2 / 2 / 3 / 3; }
+.status { grid-area: 2 / 3 / 3 / 4; }
+.log { grid-area: 3 / 2 / 4 / 4; }
+
+.footer {
+    grid-area: 4 / 2 / 4 / 4;
+    text-align: center;
+    margin-top: 0.25em;
+}
+/*background: #e4d8b4;*/

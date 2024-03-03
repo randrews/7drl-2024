@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "esbuild": "0.20.1"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rot-js": "^2.2.0"
+  },
+  "scripts": {
+    "bundle": "node esbuild.js"
+  }
+}
