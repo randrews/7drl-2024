@@ -1,7 +1,7 @@
 require('esbuild').build({
   entryPoints: ['main.jsx'],
   bundle: true,
-  minify: true,
+  minify: false,
   outdir: 'build',
   format: 'esm',
   loader: {
