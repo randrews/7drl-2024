@@ -33,8 +33,10 @@ export default class Map {
     }
 
     // Place the ladder up and down
-    this.at(this.randomCell(c => floorP(c) && !this.neighbor(wallP))).type = 'ladder'
+    //this.at(this.randomCell(c => floorP(c) && !this.neighbor(wallP))).type = 'ladder'
   }
+
+  get size() { return [this.w, this.h] }
 
   at([x, y]) {
     return this.data[x + y * this.w]
@@ -66,9 +68,6 @@ export default class Map {
               case 'copper': display.draw(x, y, '%', '#fa0')
             }
           }
-          break
-        case 'ladder':
-          display.draw(x, y, '=', '#dd0')
           break
       }
     })
@@ -130,6 +129,10 @@ export default class Map {
     while (curr && paint() && count++ < len) {
       curr = this.randomDir(curr[0], curr[1], rockP)
     }
+  }
+  
+  validLadderPosition() {
+      return this.randomCell(c => floorP(c) && !this.neighbor(wallP))
   }
 }
 
