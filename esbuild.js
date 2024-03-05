@@ -1,7 +1,9 @@
+const dev = true
 require('esbuild').build({
   entryPoints: ['main.jsx'],
   bundle: true,
-  minify: false,
+  minify: !dev,
+  sourcemap: dev,
   outdir: 'build',
   format: 'esm',
   loader: {

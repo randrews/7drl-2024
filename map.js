@@ -1,5 +1,17 @@
 import * as Rot from 'rot-js'
 
+// Total HP a square of this has
+const HP = {
+    rock: 10,
+    copper: 10
+}
+
+// minimum hardness of tool that can crack this
+const HARDNESS = {
+    rock: 1,
+    copper: 1
+}
+
 // An array of cells, where each cell is one of several different types:
 // - floor (no other properties)
 // - wall
@@ -32,14 +44,27 @@ export default class Map {
       this.oreVein(x, y, 'copper', 10)
     }
 
-    // Place the ladder up and down
-    //this.at(this.randomCell(c => floorP(c) && !this.neighbor(wallP))).type = 'ladder'
+    // populate hp and hardness
+    this.eachCell((_x, _y, cell) => {
+        if (cell.type === 'wall') {
+            cell.hp = HP[cell.ore || 'rock']
+            cell.hardness = HARDNESS[cell.ore || 'rock']
+        }
+    })
   }
 
   get size() { return [this.w, this.h] }
 
+  update() {
+    this.calculateExposed()    
+  }
+
   at([x, y]) {
     return this.data[x + y * this.w]
+  }
+
+  put([x, y], val) {
+    this.data[x + y * this.w] = val
   }
 
   // Loop through each cell, invoking a callback(x, y, cell)
@@ -49,28 +74,6 @@ export default class Map {
         fn(x, y, this.data[x + y * this.w])
       }
     }
-  }
-
-  // Draw the map on to a Rot.Display
-  draw(display) {
-    this.eachCell((x, y, cell) => {
-      switch (cell.type) {
-        case 'floor':
-          display.draw(x, y, ' ')
-          break
-        case 'wall':
-          if (!cell.exposed) {
-            display.draw(x, y, '#', '#555')
-          } else if (!cell.ore) {
-            display.draw(x, y, '#', '#ddd')
-          } else {
-            switch (cell.ore) {
-              case 'copper': display.draw(x, y, '%', '#fa0')
-            }
-          }
-          break
-      }
-    })
   }
 
   calculateExposed() {
