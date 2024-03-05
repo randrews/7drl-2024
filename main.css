@@ -39,6 +39,13 @@ a:visited { color: #ff9090; }
      margin: 5px;
  }
 
+ .status .item {
+     margin-left: 1em;
+ }
+
+.status .inventory { color: #77f; }
+.status .ground { color: #7f7; }
+
 .footer {
     grid-area: 3 / 2 / 4 / 3;
     text-align: center;

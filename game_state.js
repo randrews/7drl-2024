@@ -1,11 +1,7 @@
 import Map from './map'
 import ECS from './ecs'
-import { OnMap } from './components'
-
-const COLORS = {
-  copper: '#fa0',
-  rock: '#ddd'
-}
+import { OnMap, Named, Display } from './components'
+import { COLORS } from './balance'
 
 export class GameState {
   constructor() {
@@ -16,7 +12,7 @@ export class GameState {
 
     // Add the player and the ladder to the world
     this.playerId = this.ecs.add({ onMap: new OnMap(pos)})
-    this.ecs.add({ onMap: new OnMap(pos, { solid: true}), hoverText: 'ladder (up or down)', display: 'ladder', bumpable: () => console.log('bop') })
+    this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder') })
 
     this.updateIndex()
 
@@ -33,20 +29,9 @@ export class GameState {
     this.drawMap(display)
 
     // Draw non-player objects on the map
-    this.ecs.find(['onMap', 'display'], (_id, [onMap, type]) => {
-      const [x, y] = [onMap.x, onMap.y]
-
-      switch (type) {
-      case 'ladder':
-        display.draw(x, y, '=', '#dd0')
-        break
-      case 'copper ore':
-        display.draw(x, y, 'o', COLORS.copper)
-        break
-      case 'rock':
-        display.draw(x, y, 'o', COLORS.rock)
-        break        
-      }
+    this.ecs.find(['onMap', 'display'], (_id, [onMap, disp]) => {
+      const pos = [onMap.x, onMap.y]
+      disp.draw(pos, display)
     })
 
     // Draw the player
@@ -84,7 +69,7 @@ export class GameState {
     // First try the index:
     const ent = this.idsAt(pos)[0]
     if (ent) {
-      return this.ecs.get(ent, 'hoverText')
+      return this.ecs.get(ent, 'named').hover
     } else {
       const cell = this.map.at(pos)
       switch (cell.type) {
@@ -93,22 +78,13 @@ export class GameState {
         else if (cell.ore) { return `${cell.ore} ore` } // Show ore types
         else { return 'rock' } // plain old rock
         break
-      case 'ladder':
-        return 'ladder (up or down)'
-        break
-      case 'rock':
-        return 'loose rock'
-        break
-      case 'copper ore':
-        return 'ore (copper)'
-        break
       }
     }
   }
 
   // Build the index of onMap entities
   updateIndex() {
-    this.index = this.ecs.index(['onMap', 'hoverText'], om => this.toKey(om.pos))
+    this.index = this.ecs.index(['onMap', 'named'], om => this.toKey(om.pos))
   }
 
   idsAt(pos) {
@@ -180,16 +156,16 @@ export class GameState {
       if (cell.type === 'wall') {
         const name = cell.ore ? `${cell.ore} ore` : 'rock'
         if (cell.hardness > this.tool.hardness) {
-          console.log(cell, this.tool)
           this.log(`You need a better tool for ${name}`)
         } else {
           cell.hp -= this.tool.dmg
           if (cell.hp > 0) { this.log(`Mining ${name}`) }
           else {
+            this.log(`Mined ${name}`)
             // Mined! Replace the map cell with a floor
             this.map.put(loc, { type: 'floor' })
             // Create an entity for the ore
-            this.ecs.add({ onMap: new OnMap(loc), hoverText: name, display: name })
+            this.ecs.add({ onMap: new OnMap(loc), named: new Named(name), display: new Display(name) })
             // Tell the map the terrain has changed
             this.map.update()
           }
@@ -200,5 +176,16 @@ export class GameState {
 
   log(str) {
     this.logLines = ([str, ...this.logLines].slice(0, 6))
+  }
+
+  // A list of strings of what's on the player's cell
+  // of the form "[n] thingName"
+  onGround() {
+    const playerLoc = this.ecs.get(this.playerId, 'onMap').pos
+    const ids = this.idsAt(playerLoc)
+    return ids.map((id, i) => {
+      const str = this.ecs.get(id, 'named').inventory
+      return `[${i + 1}] ${str}`
+    })
   }
 }

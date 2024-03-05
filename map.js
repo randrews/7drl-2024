@@ -1,16 +1,5 @@
 import * as Rot from 'rot-js'
-
-// Total HP a square of this has
-const HP = {
-    rock: 10,
-    copper: 10
-}
-
-// minimum hardness of tool that can crack this
-const HARDNESS = {
-    rock: 1,
-    copper: 1
-}
+import { HP, HARDNESS } from './balance'
 
 // An array of cells, where each cell is one of several different types:
 // - floor (no other properties)

@@ -23,9 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function Game({ game }) {
   const display = useMemo(() => new Rot.Display({ width: 80, height: 40 }), [])
   const [tooltip, setTooltip] = useState('')
-  // We need something to trigger an update after key events, because the internal
-  // game state will have changed. So we'll just increment this:
-  const [turn, setTurn] = useState(0)
+  const [logLines, setLogLines] = useState([])
+  const [ground, setGround] = useState([])
   const onHover = useCallback((pos) => {
     if (!pos) { // mouse is not hovering:
       setTooltip('')
@@ -36,8 +35,9 @@ function Game({ game }) {
   const onKey = useCallback((event) => {
     if (game.keyPressed(event.key)) { event.preventDefault() }
     game.draw(display)
-    setTurn(n => n + 1)
-  }, [game, display, setTurn])
+    setLogLines(game.logLines)
+    setGround(game.onGround())
+  }, [game, display, setLogLines, setGround])
 
   useEffect(() => game.draw(display), [display, game])
 
@@ -45,7 +45,7 @@ function Game({ game }) {
     <div className='game'>
     <Keyboard onKey={onKey} />
     <Screen display={display} onHover={onHover} />
-    <Status tooltip={tooltip} />
+    <Status tooltip={tooltip} ground={ground} />
     <Log lines={game.logLines} />
     </div>
   )
@@ -83,10 +83,28 @@ function Screen({ display, onHover }) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function Status({ game, tooltip }) {
+function divList(strs) {
+  let divs = [<div className='item' key='none'>-nothing-</div>];
+  if (strs?.length > 0) {
+    divs = strs.map((str, i) => <div className='item' key={simpleHash(`${i} ${str}`)}>{str}</div>)
+  }
+  return divs
+}
+
+function Status({ tooltip, ground, actions, inventory }) {
   return (
     <div className='status'>
-      {tooltip}
+      <div className='tooltip'>{tooltip || '\u00A0'}</div>
+      <br/>
+      <div className='inventory'>Inventory:</div>
+      {divList(inventory)}
+      <br/>
+      <div className='ground'>On ground:</div>
+      {divList(ground)}
+      <br/>
+      <div className='actions'>Actions:</div>
+      {divList(actions)}
+      <br/>
     </div>
   )
 }
