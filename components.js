@@ -10,10 +10,10 @@ export class OnMap {
     
   get x() { return this.pos[0] }
   get y() { return this.pos[1] }
-  
+
   // Solid objects cannot be moved through
   get solid() { return !!this.flags.solid }
-  
+
   // Opaque objects cannot be seen through
   get opaque() { return !!this.flags.opaque }
 }
@@ -66,5 +66,11 @@ export class Display {
       display.draw(x, y, 'o', COLORS.rock)
       break
     }
+  }
+}
+
+export class Carryable {
+  constructor(type) {
+    this.type = type
   }
 }

@@ -123,8 +123,9 @@ export default class Map {
     }
   }
   
+  // TODO known bug, this doesn't work, it places the stupid ladder next to a wall sometimes
   validLadderPosition() {
-      return this.randomCell(c => floorP(c) && !this.neighbor(wallP))
+    return this.randomCell(c => (floorP(c) && !this.neighbor(c[0], c[1], wallP)))
   }
 }
 

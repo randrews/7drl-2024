@@ -22,9 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function Game({ game }) {
   const display = useMemo(() => new Rot.Display({ width: 80, height: 40 }), [])
+
   const [tooltip, setTooltip] = useState('')
   const [logLines, setLogLines] = useState([])
-  const [ground, setGround] = useState([])
+  const [inventory, setInventory] = useState(() => game.inventoryStrings())
+  const [ground, setGround] = useState(() => game.onGround())
+  const [actions, setActions] = useState(() => game.actions())
+
   const onHover = useCallback((pos) => {
     if (!pos) { // mouse is not hovering:
       setTooltip('')
@@ -32,12 +36,15 @@ function Game({ game }) {
       setTooltip(game.hover(pos))
     }
   }, [setTooltip, game])
+
   const onKey = useCallback((event) => {
     if (game.keyPressed(event.key)) { event.preventDefault() }
     game.draw(display)
     setLogLines(game.logLines)
+    setInventory(game.inventoryStrings())
     setGround(game.onGround())
-  }, [game, display, setLogLines, setGround])
+    setActions(game.actions())
+  }, [game, display, setLogLines, setInventory, setGround, setActions])
 
   useEffect(() => game.draw(display), [display, game])
 
@@ -45,7 +52,7 @@ function Game({ game }) {
     <div className='game'>
     <Keyboard onKey={onKey} />
     <Screen display={display} onHover={onHover} />
-    <Status tooltip={tooltip} ground={ground} />
+    <Status tooltip={tooltip} inventory={inventory} ground={ground} actions={actions} />
     <Log lines={game.logLines} />
     </div>
   )

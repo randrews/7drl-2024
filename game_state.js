@@ -1,6 +1,6 @@
 import Map from './map'
 import ECS from './ecs'
-import { OnMap, Named, Display } from './components'
+import { OnMap, Named, Display, Carryable } from './components'
 import { COLORS } from './balance'
 
 export class GameState {
@@ -16,12 +16,17 @@ export class GameState {
 
     this.updateIndex()
 
+    // Player stats stuff:
     this.tool = {
       dmg: 3, // Damage done to wall on bumping
       hardness: 1 // Max hardness of material that can be hit
     }
+    this.inventory = []
 
+    // ui state:
     this.logLines = []
+    this.selectMode = false
+    this.pendingAction = null
   }
 
   draw(display) {
@@ -98,26 +103,77 @@ export class GameState {
 
   // Handle a keycode and return whether it's one we care about
   keyPressed(key) {
-    switch (key) {
-    case 'ArrowDown':
-      this.movePlayer([0, 1])
-      return true
-      break
-    case 'ArrowUp':
-      this.movePlayer([0, -1])
-      return true
-      break
-    case 'ArrowLeft':
-      this.movePlayer([-1, 0])
-      return true
-      break
-    case 'ArrowRight':
-      this.movePlayer([1, 0])
-      return true
-      break
-    }
+    if (this.selectMode) {
+      // Canceling selecting an item
+      if (key === 'q') {
+        this.selectMode = false
+        this.log('Never mind')
+        return true
+      }
+
+      const id = this.entityForKey(key)
+      
+      if (!id) {
+        this.log("I don't know what that is ([q]uit?)")
+        return false // bubble the key because maybe it's f12 or something
+      }
+
+      this.selectMode = false
+
+      switch (this.pendingAction) {
+      case 'pickup':
+        this.pickup(id)
+        return true
+        break
+      case 'drop':
+        this.drop(id)
+        return true
+        break
+      }
+    } else {
+      switch (key) {
+      case 'ArrowDown':
+        this.movePlayer([0, 1])
+        return true
+        break
+      case 'ArrowUp':
+        this.movePlayer([0, -1])
+        return true
+        break
+      case 'ArrowLeft':
+        this.movePlayer([-1, 0])
+        return true
+        break
+      case 'ArrowRight':
+        this.movePlayer([1, 0])
+        return true
+        break
+
+      case 'p':
+        if (this.canPickup()) {
+          this.log('Pick up what? (or [q]uit)')
+          this.selectMode = true
+          this.pendingAction = 'pickup'
+          return true
+        } else {
+          return false
+        }
+        break
+
+      case 'd':
+        if (this.canDrop()) {
+          this.log('Drop what? (or [q]uit)')
+          this.selectMode = true
+          this.pendingAction = 'drop'
+          return true
+        } else {
+          return false
+        }
+        break
+      }
     
-    return false
+      return false
+    }
   }
 
   movePlayer([dx, dy]) {
@@ -151,24 +207,28 @@ export class GameState {
         const fn = this.ecs.get(id, 'bumpable')
         fn && fn(id)
       })
-    } else {
-      const cell = this.map.at(loc)
-      if (cell.type === 'wall') {
-        const name = cell.ore ? `${cell.ore} ore` : 'rock'
-        if (cell.hardness > this.tool.hardness) {
-          this.log(`You need a better tool for ${name}`)
-        } else {
-          cell.hp -= this.tool.dmg
-          if (cell.hp > 0) { this.log(`Mining ${name}`) }
-          else {
-            this.log(`Mined ${name}`)
-            // Mined! Replace the map cell with a floor
-            this.map.put(loc, { type: 'floor' })
-            // Create an entity for the ore
-            this.ecs.add({ onMap: new OnMap(loc), named: new Named(name), display: new Display(name) })
-            // Tell the map the terrain has changed
-            this.map.update()
-          }
+    } else { // The map only contains walls and floors, so...
+      this.mine(loc)
+    }
+  }
+
+  mine(loc) {
+    const cell = this.map.at(loc)
+    if (cell.type === 'wall') {
+      const name = cell.ore ? `${cell.ore} ore` : 'rock'
+      if (cell.hardness > this.tool.hardness) {
+        this.log(`You need a better tool for ${name}`)
+      } else {
+        cell.hp -= this.tool.dmg
+        if (cell.hp > 0) { this.log(`Mining ${name}`) }
+        else {
+          this.log(`Mined ${name}`)
+          // Mined! Replace the map cell with a floor
+          this.map.put(loc, { type: 'floor' })
+          // Create an entity for the ore
+          this.ecs.add({ onMap: new OnMap(loc), named: new Named(name), display: new Display(name), carryable: new Carryable(name) })
+          // Tell the map the terrain has changed
+          this.map.update()
         }
       }
     }
@@ -178,14 +238,99 @@ export class GameState {
     this.logLines = ([str, ...this.logLines].slice(0, 6))
   }
 
+  anyAt(loc, query) {
+    let any = false
+    this.ecs.forEach(this.idsAt(loc), query, () => (any = true))
+    return any
+  }
+
+  // key is a string of a single character, ideally 1-9 or a-z
+  entityForKey(key) {
+    const alphabet = 'abcdefghijklmnoprstuvwxyz'
+    if (alphabet.indexOf(key) !== -1) {
+      // It's a letter so we'll look in the inventory
+      return this.inventory[alphabet.indexOf(key)]
+    }
+    
+    const digits = '1234567890'
+    if (digits.indexOf(key) !== -1) {
+      // Digit so we look on the ground
+      return this.idsAt(this.playerPos)[digits.indexOf(key)]
+    }
+    
+    // What even is this
+    return null
+  }
+
   // A list of strings of what's on the player's cell
   // of the form "[n] thingName"
   onGround() {
-    const playerLoc = this.ecs.get(this.playerId, 'onMap').pos
-    const ids = this.idsAt(playerLoc)
-    return ids.map((id, i) => {
+    let i = 1
+    return this.ecs.map(this.idsAt(this.playerPos), ['named'], (id, [named]) => {
       const str = this.ecs.get(id, 'named').inventory
-      return `[${i + 1}] ${str}`
+      if (this.selectMode) {
+        return `[${i++}] ${str}`
+      } else {
+        return str
+      }
+    })
+  }
+
+  canPickup() {
+    return this.anyAt(this.playerPos, ['carryable'])
+  }
+
+  canDrop() {
+    return this.inventory.length > 0
+  }
+
+  pickup(id) {
+    const carry = this.ecs.get(id, 'carryable')
+    const onMap = this.ecs.get(id, 'onMap')
+    if (!onMap) {
+      this.log('You are already carrying that')
+      return
+    }
+    if (!carry) {
+      this.log("You can't carry that")
+      return
+    }
+
+    this.ecs.removeComponent(id, 'onMap') // Remove it from the map
+    this.inventory.push(id) // Add it to the inventory
+    this.updateIndex() // Update what's where on the map
+  }
+
+  drop(id) {
+    if (this.ecs.get(id, 'onMap')) {
+      this.log("You aren't carrying that")
+      return
+    }
+
+    this.ecs.addComponent(id, 'onMap', new OnMap(this.playerPos)) // Add it to the map
+    this.inventory = this.inventory.filter(o => o !== id) // Remove it from the inventory
+    this.updateIndex() // Update what's where on the map
+  }
+
+  // Returns a list of action names that can be taken right now
+  actions() {
+    const a = []
+
+    if (this.canPickup()) { a.push('[P]ick up') }
+    if (this.canDrop()) { a.push('[D]rop') }
+
+    return a
+  }
+
+  inventoryStrings() {
+    const alphabet = 'abcdefghijklmnoprstuvwxyz'
+    let i = 0
+    return this.ecs.map(this.inventory, ['named'], (_, [n]) => {
+      if (this.selectMode) {
+        return `[${alphabet.charAt(i++)}] ${n.inventory}`
+      } else {
+        return n.inventory
+      }
     })
   }
 }
