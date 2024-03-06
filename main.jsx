@@ -27,7 +27,7 @@ function Game({ game }) {
   const [logLines, setLogLines] = useState([])
   const [inventory, setInventory] = useState(() => game.inventoryStrings())
   const [ground, setGround] = useState(() => game.onGround())
-  const [actions, setActions] = useState(() => game.actions())
+  const [actions, setActions] = useState(() => game.actionStrings())
 
   const onHover = useCallback((pos) => {
     if (!pos) { // mouse is not hovering:
@@ -43,7 +43,7 @@ function Game({ game }) {
     setLogLines(game.logLines)
     setInventory(game.inventoryStrings())
     setGround(game.onGround())
-    setActions(game.actions())
+    setActions(game.actionStrings())
   }, [game, display, setLogLines, setInventory, setGround, setActions])
 
   useEffect(() => game.draw(display), [display, game])

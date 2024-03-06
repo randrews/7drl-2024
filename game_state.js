@@ -2,6 +2,10 @@ import Map from './map'
 import ECS from './ecs'
 import { OnMap, Named, Display, Carryable } from './components'
 import { COLORS } from './balance'
+import Actions from './actions'
+
+// If true, debug logs are enabled
+const DEBUG = true
 
 export class GameState {
   constructor() {
@@ -12,7 +16,7 @@ export class GameState {
 
     // Add the player and the ladder to the world
     this.playerId = this.ecs.add({ onMap: new OnMap(pos)})
-    this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder') })
+    this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
 
     this.updateIndex()
 
@@ -66,10 +70,9 @@ export class GameState {
     })
   }
 
-  get playerPos() {
-    return this.ecs.get(this.playerId, 'onMap').pos
-  }
+  get playerPos() { return this.ecs.get(this.playerId, 'onMap').pos }
 
+  // Show a helpful string for what we're hovering the mouse over
   hover(pos) {
     // First try the index:
     const ent = this.idsAt(pos)[0]
@@ -87,19 +90,10 @@ export class GameState {
     }
   }
 
-  // Build the index of onMap entities
-  updateIndex() {
-    this.index = this.ecs.index(['onMap', 'named'], om => this.toKey(om.pos))
-  }
-
-  idsAt(pos) {
-    return this.index(this.toKey(pos))
-  }
-
-  // Turn a position into an index key
-  toKey([x, y]) {
-    return x + y * this.map.w
-  }
+  // Dealing eith the indexK
+  updateIndex() { this.index = this.ecs.index(['onMap', 'named'], om => this.toKey(om.pos)) } // Build the index of onMap entities
+  idsAt(pos) { return this.index(this.toKey(pos)) } // All entities at a map location [x, y]
+  toKey([x, y]) { return x + y * this.map.w } // Turn a position into an index key
 
   // Handle a keycode and return whether it's one we care about
   keyPressed(key) {
@@ -111,25 +105,18 @@ export class GameState {
         return true
       }
 
-      const id = this.entityForKey(key)
+      const id = this.entityForKey(key) // Find what we just selected
       
-      if (!id) {
+      if (!id) { // We selected nonsense...?
         this.log("I don't know what that is ([q]uit?)")
         return false // bubble the key because maybe it's f12 or something
       }
 
-      this.selectMode = false
-
-      switch (this.pendingAction) {
-      case 'pickup':
-        this.pickup(id)
-        return true
-        break
-      case 'drop':
-        this.drop(id)
-        return true
-        break
-      }
+      this.pendingAction.verb(this, id) // Actually do the action
+      this.selectMode = false // Clear the UI states
+      this.pendingAction = null
+      this.updateIndex() // Update what's where on the map
+      return true
     } else {
       switch (key) {
       case 'ArrowDown':
@@ -148,30 +135,22 @@ export class GameState {
         this.movePlayer([1, 0])
         return true
         break
-
-      case 'p':
-        if (this.canPickup()) {
-          this.log('Pick up what? (or [q]uit)')
-          this.selectMode = true
-          this.pendingAction = 'pickup'
-          return true
-        } else {
-          return false
-        }
-        break
-
-      case 'd':
-        if (this.canDrop()) {
-          this.log('Drop what? (or [q]uit)')
-          this.selectMode = true
-          this.pendingAction = 'drop'
-          return true
-        } else {
-          return false
-        }
-        break
       }
-    
+
+      Actions.forEach((action) => {
+        if (key === action.key && action.canDo(this)) {
+          if (action.needsItem) {
+            this.log(action.prompt)
+            this.selectMode = true
+            this.pendingAction = action
+          } else {
+            action.verb(this)
+          }
+          return true
+        } else {
+          return false
+        }
+      })
       return false
     }
   }
@@ -237,7 +216,13 @@ export class GameState {
   log(str) {
     this.logLines = ([str, ...this.logLines].slice(0, 6))
   }
+  debug(str) {
+    if (DEBUG) {
+      this.logLines = ([str, ...this.logLines].slice(0, 6))
+    }
+  }
 
+  // Return whether any entities at the location have a certain set of components
   anyAt(loc, query) {
     let any = false
     this.ecs.forEach(this.idsAt(loc), query, () => (any = true))
@@ -245,6 +230,7 @@ export class GameState {
   }
 
   // key is a string of a single character, ideally 1-9 or a-z
+  // Find which entity id (if any) is in the inventory or on the ground for that key
   entityForKey(key) {
     const alphabet = 'abcdefghijklmnoprstuvwxyz'
     if (alphabet.indexOf(key) !== -1) {
@@ -263,12 +249,12 @@ export class GameState {
   }
 
   // A list of strings of what's on the player's cell
-  // of the form "[n] thingName"
   onGround() {
     let i = 1
     return this.ecs.map(this.idsAt(this.playerPos), ['named'], (id, [named]) => {
       const str = this.ecs.get(id, 'named').inventory
       if (this.selectMode) {
+        // If we're selecting something, show digits to select
         return `[${i++}] ${str}`
       } else {
         return str
@@ -276,61 +262,29 @@ export class GameState {
     })
   }
 
-  canPickup() {
-    return this.anyAt(this.playerPos, ['carryable'])
-  }
-
-  canDrop() {
-    return this.inventory.length > 0
-  }
-
-  pickup(id) {
-    const carry = this.ecs.get(id, 'carryable')
-    const onMap = this.ecs.get(id, 'onMap')
-    if (!onMap) {
-      this.log('You are already carrying that')
-      return
-    }
-    if (!carry) {
-      this.log("You can't carry that")
-      return
-    }
-
-    this.ecs.removeComponent(id, 'onMap') // Remove it from the map
-    this.inventory.push(id) // Add it to the inventory
-    this.updateIndex() // Update what's where on the map
-  }
-
-  drop(id) {
-    if (this.ecs.get(id, 'onMap')) {
-      this.log("You aren't carrying that")
-      return
-    }
-
-    this.ecs.addComponent(id, 'onMap', new OnMap(this.playerPos)) // Add it to the map
-    this.inventory = this.inventory.filter(o => o !== id) // Remove it from the inventory
-    this.updateIndex() // Update what's where on the map
-  }
-
-  // Returns a list of action names that can be taken right now
-  actions() {
-    const a = []
-
-    if (this.canPickup()) { a.push('[P]ick up') }
-    if (this.canDrop()) { a.push('[D]rop') }
-
-    return a
-  }
-
+  // A list of strings of what's in the inventory
   inventoryStrings() {
     const alphabet = 'abcdefghijklmnoprstuvwxyz'
     let i = 0
     return this.ecs.map(this.inventory, ['named'], (_, [n]) => {
       if (this.selectMode) {
+        // If we're selecting something, show letters to select
         return `[${alphabet.charAt(i++)}] ${n.inventory}`
       } else {
         return n.inventory
       }
     })
   }
+  
+  // Returns a list of action names that can be taken right now
+  actionStrings() {
+    const a = []
+
+    Actions.forEach((action) => {
+      if (action.canDo(this)) { a.push(action.description) }
+    })
+
+    return a
+  }
 }
+
