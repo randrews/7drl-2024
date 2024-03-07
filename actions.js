@@ -1,14 +1,36 @@
 import { OnMap, Named, Display, Carryable } from './components'
 
+// An inputHandler for a GameState that will select an item
+// from either the inventory or the ground
+function selectItemHandler(game, key) {
+  const id = game.entityForKey(key) // Find what we just selected
+
+  if (!id) { // We selected nonsense...?
+    game.log("I don't know what that is ([q]uit?)")
+    return false // bubble the key because maybe it's f12 or something
+  }
+
+  game.pendingAction.finish(game, id) // Actually do the action
+  game.selectMode = false // Clear the UI states
+  game.pendingAction = null
+  game.inputHandler = null
+  game.updateIndex() // Update what's where on the map
+  return true
+}
+
 const Pickup = {
   key: 'p',
   description: '[P]ick up',
-  needsItem: true,
-  prompt: 'Pick up what? (or [q]uit)',
   canDo: (game) => {
     return game.anyAt(game.playerPos, ['carryable'])
   },
-  verb: (game, id) => {
+  verb: (game) => {
+    game.log('Pick up what? (or [q]uit)')
+    game.selectMode = true
+    game.pendingAction = Pickup
+    game.inputHandler = selectItemHandler
+  },
+  finish: (game, id) => {
     game.debug(`Picking up ${id}`)
     const carry = game.ecs.get(id, 'carryable')
     const onMap = game.ecs.get(id, 'onMap')
@@ -30,12 +52,16 @@ const Pickup = {
 const Drop = {
   key: 'd',
   description: '[D]rop',
-  needsItem: true,
-  prompt: 'Drop what? (or [q]uit)',
   canDo: (game) => {
     return !game.inventory.empty()
   },
-  verb: (game, id) => {
+  verb: (game) => {
+    game.log('Drop what? (or [q]uit)')
+    game.selectMode = true
+    game.pendingAction = Drop
+    game.inputHandler = selectItemHandler
+  },
+  finish: (game, id) => {
     game.debug(`dropping ${id}`)
     if (game.ecs.get(id, 'onMap')) {
       game.log("You aren't carrying that")
@@ -53,7 +79,23 @@ const Climb = {
     return game.anyAt(game.playerPos, ['climbable'])
   },
   verb: (game) => {
-    game.debug("Climbing isn't implemented yet")
+    game.inputHandler = Climb.finish
+    game.log('Climb [U]p or [D]own? (or [q]uit)')
+  },
+  finish: (game, key) => {
+    switch (key) {
+    case 'u':
+      game.log('Climbing back up to workshop')
+      game.inputHandler = null
+      return true
+    case 'd':
+      game.log('Climbing to next level')
+      game.inputHandler = null
+      return true
+    default:
+      game.log('Which direction? (or [q]uit)')
+      return false
+    }
   }
 }
 

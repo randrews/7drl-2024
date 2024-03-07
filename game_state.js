@@ -30,6 +30,10 @@ export class GameState {
     this.logLines = []
     this.selectMode = false
     this.pendingAction = null
+    this.inputHandler = null
+    
+    // gameMode is either mine or workshop
+    this.gameMode = 'mine'
   }
 
   draw(display) {
@@ -90,34 +94,23 @@ export class GameState {
     }
   }
 
-  // Dealing eith the indexK
+  // Dealing eith the index
   updateIndex() { this.index = this.ecs.index(['onMap', 'named'], om => this.toKey(om.pos)) } // Build the index of onMap entities
   idsAt(pos) { return this.index(this.toKey(pos)) } // All entities at a map location [x, y]
   toKey([x, y]) { return x + y * this.map.w } // Turn a position into an index key
 
   // Handle a keycode and return whether it's one we care about
   keyPressed(key) {
-    if (this.selectMode) {
-      // Canceling selecting an item
+    if (this.inputHandler) {
+      // An inputHandler is something with an action that can request input.
+      // We'll pass keys to it until it removes itself. But we'll always have
+      // 'q' to quit that mode
       if (key === 'q') {
-        this.selectMode = false
+        this.inputHandler = null
         this.log('Never mind')
         return true
-      }
-
-      const id = this.entityForKey(key) // Find what we just selected
-      
-      if (!id) { // We selected nonsense...?
-        this.log("I don't know what that is ([q]uit?)")
-        return false // bubble the key because maybe it's f12 or something
-      }
-
-      this.pendingAction.verb(this, id) // Actually do the action
-      this.selectMode = false // Clear the UI states
-      this.pendingAction = null
-      this.updateIndex() // Update what's where on the map
-      return true
-    } else {
+      } else { return this.inputHandler(this, key) }
+   } else {
       switch (key) {
       case 'ArrowDown':
         this.movePlayer([0, 1])
@@ -139,18 +132,11 @@ export class GameState {
 
       Actions.forEach((action) => {
         if (key === action.key && action.canDo(this)) {
-          if (action.needsItem) {
-            this.log(action.prompt)
-            this.selectMode = true
-            this.pendingAction = action
-          } else {
-            action.verb(this)
-          }
+          action.verb(this)
           return true
-        } else {
-          return false
         }
       })
+
       return false
     }
   }
@@ -170,13 +156,7 @@ export class GameState {
   }
 
   navigable(loc) {
-    if (this.map.at(loc).type === 'floor') {
-      // It's a floor but does it contain a solid object?
-      const ids = this.idsAt(loc)
-      return ids.map(id => this.ecs.get(id, 'onMap')).every(c => !c.solid)
-    } else {
-      return false
-    }
+    return this.map.at(loc).type === 'floor'
   }
 
   bumpAll(loc) {
