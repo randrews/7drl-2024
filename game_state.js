@@ -1,6 +1,6 @@
 import Map from './map'
 import ECS from './ecs'
-import { OnMap, Named, Display, Carryable } from './components'
+import { OnMap, Named, Display, Carryable, Inventory, Drinkable } from './components'
 import { COLORS } from './balance'
 import Actions from './actions'
 
@@ -15,7 +15,7 @@ export class GameState {
     const pos = this.map.validLadderPosition()
 
     // Add the player and the ladder to the world
-    this.playerId = this.ecs.add({ onMap: new OnMap(pos)})
+    this.playerId = this.ecs.add({ onMap: new OnMap(pos), inventory: new Inventory(this.ecs) })
     this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
 
     this.updateIndex()
@@ -25,7 +25,6 @@ export class GameState {
       dmg: 3, // Damage done to wall on bumping
       hardness: 1 // Max hardness of material that can be hit
     }
-    this.inventory = []
 
     // ui state:
     this.logLines = []
@@ -71,6 +70,7 @@ export class GameState {
   }
 
   get playerPos() { return this.ecs.get(this.playerId, 'onMap').pos }
+  get inventory() { return this.ecs.get(this.playerId, 'inventory') }
 
   // Show a helpful string for what we're hovering the mouse over
   hover(pos) {
@@ -235,7 +235,7 @@ export class GameState {
     const alphabet = 'abcdefghijklmnoprstuvwxyz'
     if (alphabet.indexOf(key) !== -1) {
       // It's a letter so we'll look in the inventory
-      return this.inventory[alphabet.indexOf(key)]
+      return this.inventory.inventoryItemAt(alphabet.indexOf(key))
     }
     
     const digits = '1234567890'
@@ -265,17 +265,17 @@ export class GameState {
   // A list of strings of what's in the inventory
   inventoryStrings() {
     const alphabet = 'abcdefghijklmnoprstuvwxyz'
-    let i = 0
-    return this.ecs.map(this.inventory, ['named'], (_, [n]) => {
-      if (this.selectMode) {
-        // If we're selecting something, show letters to select
-        return `[${alphabet.charAt(i++)}] ${n.inventory}`
-      } else {
-        return n.inventory
-      }
-    })
+    let strs = this.inventory.inventoryStrings()
+
+    // If we're selecting something, show letters to select
+    if (this.selectMode) {
+      strs = strs.map((s, i) => `[${alphabet.charAt(i)}] ${s}`)
+    }
+
+    while (strs.length < this.inventory.inventoryLimit) { strs.push('---') }
+    return strs
   }
-  
+
   // Returns a list of action names that can be taken right now
   actionStrings() {
     const a = []
