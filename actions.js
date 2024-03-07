@@ -87,6 +87,7 @@ const Climb = {
     case 'u':
       game.log('Climbing back up to workshop')
       game.inputHandler = null
+      game.enterWorkshop()
       return true
     case 'd':
       game.log('Climbing to next level')

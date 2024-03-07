@@ -266,5 +266,10 @@ export class GameState {
 
     return a
   }
+  
+  enterWorkshop() {
+    this.gameMode = 'workshop'
+    // Empty inventory into ore buckets
+  }
 }
 
