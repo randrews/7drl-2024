@@ -1,8 +1,10 @@
 import Map from './map'
 import ECS from './ecs'
+import * as Rot from 'rot-js'
 import { OnMap, Named, Display, Carryable, Inventory, Drinkable } from './components'
 import { COLORS } from './balance'
 import Actions from './actions'
+import { makeMineral, makeMoss } from './types'
 
 // If true, debug logs are enabled
 const DEBUG = true
@@ -17,6 +19,9 @@ export class GameState {
     // Add the player and the ladder to the world
     this.playerId = this.ecs.add({ onMap: new OnMap(pos), inventory: new Inventory(this.ecs) })
     this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
+
+    // Throw some moss on the ground
+    this.makeMoss(10)
 
     this.updateIndex()
 
@@ -181,14 +186,34 @@ export class GameState {
         cell.hp -= this.tool.dmg
         if (cell.hp > 0) { this.log(`Mining ${name}`) }
         else {
-          this.log(`Mined ${name}`)
           // Mined! Replace the map cell with a floor
           this.map.put(loc, { type: 'floor' })
-          // Create an entity for the ore
-          this.ecs.add({ onMap: new OnMap(loc), named: new Named(name), display: new Display(name), carryable: new Carryable(name) })
+          // Are we actually mining a quartz? If we roll a 10 we are!
+          const quartz = name === 'rock' && Rot.RNG.getUniform() > 0.9
+          // Create an entity for the thing
+          if (quartz) {
+            this.log('This rock contained a piece of quartz!')
+            makeMineral(this.ecs, 'quartz')
+          } else {
+            this.log(`Mined ${name}`)
+            makeMineral(this.ecs, name)
+          }
+            
           // Tell the map the terrain has changed
           this.map.update()
         }
+      }
+    }
+  }
+
+  makeMoss(count) {
+    let mossLocs = {}
+    while (Object.keys(mossLocs).length < count) {
+      const ml = this.map.validMossPosition()
+      const key = this.toKey(ml)
+      if (!mossLocs[key]) {
+        makeMoss(this.ecs, ml)
+        mossLocs[key] = true
       }
     }
   }

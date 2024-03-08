@@ -98,7 +98,7 @@ export default class Map {
     while (true) {
       const x = Math.floor(Rot.RNG.getUniform() * this.w)
       const y = Math.floor(Rot.RNG.getUniform() * this.h)
-      if (filter(this.data[x + y * this.w])) { return [x, y] }
+      if (filter(this.data[x + y * this.w], [x, y])) { return [x, y] }
     }
   }
 
@@ -123,9 +123,12 @@ export default class Map {
     }
   }
   
-  // TODO known bug, this doesn't work, it places the stupid ladder next to a wall sometimes
   validLadderPosition() {
-    return this.randomCell(c => (floorP(c) && !this.neighbor(c[0], c[1], wallP)))
+    return this.randomCell((c, l) => (floorP(c) && !this.neighbor(l[0], l[1], wallP)))
+  }
+
+  validMossPosition() {
+    return this.randomCell(floorP)
   }
 }
 

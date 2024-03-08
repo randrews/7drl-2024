@@ -83,11 +83,12 @@ function Game({ game }) {
 
 /*
   todo:
-  - rocks drop quartz 10% of the time
+  - [DONE] rocks drop quartz 10% of the time
   - sell quartz for money (1 ea)
   - buy workbench with money ($5)
   - use rocks to make forge, 10 rocks
-  - map has moss, 5 moss to build garden
+  - [DONE] map has moss
+  - 5 moss to build garden
   - rocks + garden increases stack limit (10 rocks -> 10 stack, 20 -> 15, 40 -> 20, etc)
   - rocks to buy gym, rocks + gym increases max health (10 rocks -> +5, 15 -> +5, 20 -> +5, etc)
   - stamina? if there's time

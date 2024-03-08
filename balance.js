@@ -1,6 +1,7 @@
 export const COLORS = {
   copper: '#fa0',
-  rock: '#ddd'
+  rock: '#ddd',
+  quartz: '#fff'
 }
 
 // Total HP a square of this has

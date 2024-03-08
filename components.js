@@ -58,6 +58,11 @@ export class Display {
     case 'rock':
       display.draw(x, y, 'o', COLORS.rock)
       break
+    case 'quartz':
+      display.draw(x, y, '*', COLORS.quartz)
+      break
+    case 'moss':
+      display.draw(x, y, '%', '#0d3')
     }
   }
 }
