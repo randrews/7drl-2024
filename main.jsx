@@ -26,8 +26,10 @@ function Game({ game }) {
   const [tooltip, setTooltip] = useState('')
   const [logLines, setLogLines] = useState([])
   const [inventory, setInventory] = useState(() => game.inventoryStrings())
+  const [stockpile, setStockpile] = useState(() => game.stockpileStrings())
   const [ground, setGround] = useState(() => game.onGround())
   const [actions, setActions] = useState(() => game.actionStrings())
+  const [workshopOptions, setWorkshopOptions] = useState(() => game.workshopOptions())
 
   const onHover = useCallback((pos) => {
     if (!pos) { // mouse is not hovering:
@@ -40,8 +42,10 @@ function Game({ game }) {
   const updateEverything = useCallback(() => {
     setLogLines(game.logLines)
     setInventory(game.inventoryStrings())
+    setStockpile(game.stockpileStrings())
     setGround(game.onGround())
-    setActions(game.actionStrings())    
+    setActions(game.actionStrings())
+    setWorkshopOptions(game.workshopOptions())
   }, [game])
 
   const onKey = useCallback((event) => {
@@ -51,8 +55,7 @@ function Game({ game }) {
   }, [game, display, updateEverything])
 
   const onAction = useCallback((event) => {
-    const act = event.target.getAttribute('action')
-    game.log(`doin' a ${act}`)
+    game.workshopAction(event.target.getAttribute('action'))
     updateEverything()
   }, [game, updateEverything])
 
@@ -66,8 +69,8 @@ function Game({ game }) {
     </>)
     statusPanel = <Status tooltip={tooltip} inventory={inventory} ground={ground} actions={actions} />
   } else if (game.gameMode === 'workshop') {
-    mainPanel = <Workshop game={game} onAction={onAction} />
-    statusPanel = <WorkshopStatus stocks={{}} inventory={inventory} />
+    mainPanel = <Workshop game={game} onAction={onAction} options={workshopOptions} />
+    statusPanel = <WorkshopStatus stockpile={stockpile} inventory={inventory} />
   }
 
   return (
@@ -84,7 +87,7 @@ function Game({ game }) {
 /*
   todo:
   - [DONE] rocks drop quartz 10% of the time
-  - sell quartz for money (1 ea)
+  - [DONE] sell quartz for money (1 ea)
   - buy workbench with money ($5)
   - use rocks to make forge, 10 rocks
   - [DONE] map has moss
@@ -105,22 +108,10 @@ function Game({ game }) {
   - buy health potions, refill health to full, $1
 */
 
-function Workshop({ game, onAction }) {
-  const mineActions = [
-    'return to mine',
-  ]
-
-  const marketActions = [
-    'sell ingot',
-    'buy potion'
-  ]
-
-  const makeLinks = (actions) => actions.map((act, i) => {
-    return <div key={simpleHash(`${i} ${act}`)} className='button' onClick={onAction} action={act}>[{act}]</div>
-  })
-
-  const marketLinks = makeLinks(marketActions)
-  const mineLinks = makeLinks(mineActions)
+function Workshop({ game, onAction, options }) {
+  const linkify = links => links.map(link => <WorkshopLink key={link.action} text={link.text} action={link.action} enabled={link.enabled} onAction={onAction}/>)
+  const marketLinks = linkify(options.filter(o => o.room === 'market'))
+  const mineLinks = linkify(options.filter(o => o.room === 'mine'))
 
   return (
     <div className='workshop'>
@@ -136,6 +127,14 @@ function Workshop({ game, onAction }) {
       <div className='workstation workbench'>workbench</div>
     </div>
   )
+}
+
+function WorkshopLink({ text, action, enabled, onAction }) {
+  if (enabled) {
+    return <div className='button' onClick={onAction} action={action}>[{text}]</div>
+  } else {
+    return <div className='button disabled' action={action}>[{text}]</div>
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,14 +196,14 @@ function Status({ tooltip, ground, actions, inventory }) {
   )
 }
 
-function WorkshopStatus({ stocks, inventory }) {
+function WorkshopStatus({ stockpile, inventory }) {
   return (
     <div className='status'>
       <div className='inventory'>Inventory:</div>
       {divList(inventory)}
       <br/>
       <div className='ground'>Stockpile:</div>
-      {divList([])}
+      {divList(stockpile)}
       <br/>
     </div>
   )

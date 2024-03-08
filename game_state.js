@@ -1,10 +1,11 @@
 import Map from './map'
 import ECS from './ecs'
 import * as Rot from 'rot-js'
-import { OnMap, Named, Display, Carryable, Inventory, Drinkable } from './components'
+import { OnMap, Named, Display, Carryable, Inventory, Drinkable, Wallet } from './components'
 import { COLORS } from './balance'
 import Actions from './actions'
 import { makeMineral, makeMoss } from './types'
+import * as Workshop from './workshop'
 
 // If true, debug logs are enabled
 const DEBUG = true
@@ -17,11 +18,14 @@ export class GameState {
     const pos = this.map.validLadderPosition()
 
     // Add the player and the ladder to the world
-    this.playerId = this.ecs.add({ onMap: new OnMap(pos), inventory: new Inventory(this.ecs) })
+    this.playerId = this.ecs.add({ onMap: new OnMap(pos), inventory: new Inventory(this.ecs), wallet: new Wallet(0) })
     this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
 
     // Throw some moss on the ground
     this.makeMoss(10)
+
+    // Create the workshop
+    this.workshopId = this.makeWorkshop()
 
     this.updateIndex()
 
@@ -80,6 +84,8 @@ export class GameState {
 
   get playerPos() { return this.ecs.get(this.playerId, 'onMap').pos }
   get inventory() { return this.ecs.get(this.playerId, 'inventory') }
+  get stockpile() { return this.ecs.get(this.workshopId, 'inventory') }
+  get wallet() { return this.ecs.get(this.playerId, 'wallet') }
 
   // Show a helpful string for what we're hovering the mouse over
   hover(pos) {
@@ -193,10 +199,10 @@ export class GameState {
           // Create an entity for the thing
           if (quartz) {
             this.log('This rock contained a piece of quartz!')
-            makeMineral(this.ecs, 'quartz')
+            makeMineral(this.ecs, 'quartz', loc)
           } else {
             this.log(`Mined ${name}`)
-            makeMineral(this.ecs, name)
+            makeMineral(this.ecs, name, loc)
           }
             
           // Tell the map the terrain has changed
@@ -216,6 +222,13 @@ export class GameState {
         mossLocs[key] = true
       }
     }
+  }
+  
+  makeWorkshop() {
+    const inv = new Inventory(this.ecs)
+    inv.stackLimit = 1000
+    inv.inventoryLimit = 1000
+    return this.ecs.add({ inventory: inv })
   }
 
   log(str) {
@@ -281,6 +294,9 @@ export class GameState {
     return strs
   }
 
+  // A list of strings of what's in the inventory
+  stockpileStrings() { return this.stockpile.inventoryStrings() }
+
   // Returns a list of action names that can be taken right now
   actionStrings() {
     const a = []
@@ -294,7 +310,17 @@ export class GameState {
   
   enterWorkshop() {
     this.gameMode = 'workshop'
+
     // Empty inventory into ore buckets
+    const toDump = []
+    this.inventory.forEach(id => (this.ecs.get(id, 'stockable') && toDump.push(id)))
+    toDump.forEach((id) => {
+      this.inventory.dropItem(id)
+      this.stockpile.giveItem(id)
+    })
   }
+  
+  workshopOptions() { return Workshop.workshopOptions(this.ecs, this.workshopId, this.playerId) }
+  workshopAction(action) { return Workshop.actions[action](this) }
 }
 

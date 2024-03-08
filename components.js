@@ -68,9 +68,7 @@ export class Display {
 }
 
 export class Drinkable {
-  constructor(type) {
-    this.type = type
-  }
+  constructor(type) { this.type = type }
 
   drink(game) {
     game.log('TODO drinking')
@@ -78,9 +76,16 @@ export class Drinkable {
 }
 
 export class Carryable {
-  constructor(type) {
-    this.type = type
-  }
+  constructor(type) { this.type = type }
+}
+
+export class Sellable {
+  constructor(price) { this.price = price }
+}
+
+export class Wallet {
+  constructor(amount) { this.amount = amount }
+  transact(delta) { this.amount += delta }
 }
 
 export class Inventory {
@@ -93,7 +98,26 @@ export class Inventory {
     this.inventory = []
   }
 
+  // Loop through all carried IDs
+  forEach(fn) {
+    this.inventory.forEach(stack => stack.forEach(id => fn(id)))
+  }
+
   empty() { return this.inventory.length === 0 }
+
+  // Return whether the inventory has any stacks of a given `carryable` type
+  hasAny(type) {
+    return this.inventory.reduce((any, stack) => (any || this.getType(stack[0]) === type), false)
+  }
+
+  // Try to remove a carryable of the given type, return the id or null
+  removeType(type) {
+    const stack = this.inventory.find(s => this.getType(s[0]) === type)
+    if (!stack) { return null }
+    const id = stack.pop()
+    this.inventory = this.inventory.filter(s => s.length > 0)
+    return id
+  }
 
   // util method, get the carryable type of an id
   getType(id) { return this.ecs.get(id, 'carryable').type }
@@ -118,11 +142,15 @@ export class Inventory {
   }
 
   // Drop the stack containing the given id, if we contain it
+  // loc is optional; if omitted then the id is just removed from
+  // inventory, not placed on the map
   dropItem(id, loc) {
     const stack = this.inventory.find(s => s.indexOf(id) !== -1)
 
     if (stack) {
-      stack.forEach(item => this.ecs.addComponent(item, 'onMap', new OnMap(loc)))
+      if (loc) {
+        stack.forEach(item => this.ecs.addComponent(item, 'onMap', new OnMap(loc)))
+      }
       const idx = this.inventory.indexOf(stack)
       this.inventory.splice(idx, 1)
     }

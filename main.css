@@ -1,5 +1,5 @@
 body { 
-    font-family: 'Roboto Mono', monospace;
+    font-family: monospace;
     font-size: 15px;
     background: #505050;
     color: #dddddd;
@@ -83,6 +83,11 @@ a:visited { color: #ff9090; }
 
 .workstation .button {
     cursor: pointer;
+    user-select: none;
+}
+
+.workstation .button.disabled {
+    color: #888;
 }
 
 .footer {
