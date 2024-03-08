@@ -88,6 +88,24 @@ export class Wallet {
   transact(delta) { this.amount += delta }
 }
 
+export class Player {
+  constructor() {
+    this.hp = 10
+    this.maxHp = 10
+    this.tool = 'pickaxe'
+    this.gear = []
+  }
+
+  get hpDescription() {
+    return `${this.hp} / ${this.maxHp}`
+  }
+
+  get gearDescription() {
+    if (this.gear.length === 0) { return '-none-' }
+    return this.gear.join(', ')
+  }
+}
+
 export class Inventory {
   constructor(ecs) {
     this.ecs = ecs
@@ -117,6 +135,26 @@ export class Inventory {
     const id = stack.pop()
     this.inventory = this.inventory.filter(s => s.length > 0)
     return id
+  }
+
+  removeCount(type, count) {
+    if (!count) { throw `not a count: ${count}`}
+    const ids = []
+    this.inventory.forEach((stack) => {
+      while (count > 0 && stack[0] && this.getType(stack[0]) === type) {
+        ids.push(stack.shift())
+        count--
+      }
+    })
+    this.inventory = this.inventory.filter(s => s.length > 0)
+    return ids
+  }
+
+  countType(type) {
+    return this.inventory.reduce((total, stack) => {
+      if (this.getType(stack[0]) === type) { return total + stack.length }
+      else { return total }
+    }, 0)
   }
 
   // util method, get the carryable type of an id

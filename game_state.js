@@ -1,7 +1,7 @@
 import Map from './map'
 import ECS from './ecs'
 import * as Rot from 'rot-js'
-import { OnMap, Named, Display, Carryable, Inventory, Drinkable, Wallet } from './components'
+import { OnMap, Named, Display, Carryable, Inventory, Drinkable, Wallet, Player } from './components'
 import { COLORS } from './balance'
 import Actions from './actions'
 import { makeMineral, makeMoss } from './types'
@@ -18,7 +18,7 @@ export class GameState {
     const pos = this.map.validLadderPosition()
 
     // Add the player and the ladder to the world
-    this.playerId = this.ecs.add({ onMap: new OnMap(pos), inventory: new Inventory(this.ecs), wallet: new Wallet(0) })
+    this.playerId = this.ecs.add({ onMap: new OnMap(pos), inventory: new Inventory(this.ecs), wallet: new Wallet(0), player: new Player() })
     this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
 
     // Throw some moss on the ground
@@ -86,6 +86,8 @@ export class GameState {
   get inventory() { return this.ecs.get(this.playerId, 'inventory') }
   get stockpile() { return this.ecs.get(this.workshopId, 'inventory') }
   get wallet() { return this.ecs.get(this.playerId, 'wallet') }
+  get playerStats() { return this.ecs.get(this.playerId, 'player') }
+  get rooms() { return this.ecs.get(this.workshopId, 'rooms') }
 
   // Show a helpful string for what we're hovering the mouse over
   hover(pos) {
@@ -228,7 +230,14 @@ export class GameState {
     const inv = new Inventory(this.ecs)
     inv.stackLimit = 1000
     inv.inventoryLimit = 1000
-    return this.ecs.add({ inventory: inv })
+    const rooms = {}
+    if (DEBUG) {
+      rooms.gym = true
+      rooms.forge = true
+      rooms.garden = true
+      rooms.workbench = true
+    }
+    return this.ecs.add({ inventory: inv, rooms })
   }
 
   log(str) {
@@ -307,7 +316,17 @@ export class GameState {
 
     return a
   }
-  
+
+  playerStrings() {
+    const strs = []
+    strs.push(`HP: ${this.playerStats.hpDescription}`)
+    strs.push(`Money: $${this.wallet.amount}`)
+    strs.push(`Stack limit: ${this.inventory.stackLimit}`)
+    strs.push(`Tool: ${this.playerStats.tool}`)
+    strs.push(`Gear: ${this.playerStats.gearDescription}`)
+    return strs
+  }
+
   enterWorkshop() {
     this.gameMode = 'workshop'
 
@@ -318,6 +337,8 @@ export class GameState {
       this.inventory.dropItem(id)
       this.stockpile.giveItem(id)
     })
+    
+    this.playerStats.hp = this.playerStats.maxHp
   }
   
   workshopOptions() { return Workshop.workshopOptions(this.ecs, this.workshopId, this.playerId) }

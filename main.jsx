@@ -28,6 +28,7 @@ function Game({ game }) {
   const [inventory, setInventory] = useState(() => game.inventoryStrings())
   const [stockpile, setStockpile] = useState(() => game.stockpileStrings())
   const [ground, setGround] = useState(() => game.onGround())
+  const [player, setPlayer] = useState(() => game.playerStrings())
   const [actions, setActions] = useState(() => game.actionStrings())
   const [workshopOptions, setWorkshopOptions] = useState(() => game.workshopOptions())
 
@@ -45,6 +46,7 @@ function Game({ game }) {
     setStockpile(game.stockpileStrings())
     setGround(game.onGround())
     setActions(game.actionStrings())
+    setPlayer(game.playerStrings())
     setWorkshopOptions(game.workshopOptions())
   }, [game])
 
@@ -67,10 +69,10 @@ function Game({ game }) {
       <Keyboard onKey={onKey} />
       <Screen display={display} onHover={onHover} />
     </>)
-    statusPanel = <Status tooltip={tooltip} inventory={inventory} ground={ground} actions={actions} />
+    statusPanel = <Status tooltip={tooltip} inventory={inventory} ground={ground} actions={actions} player={player} />
   } else if (game.gameMode === 'workshop') {
     mainPanel = <Workshop game={game} onAction={onAction} options={workshopOptions} />
-    statusPanel = <WorkshopStatus stockpile={stockpile} inventory={inventory} />
+    statusPanel = <WorkshopStatus stockpile={stockpile} inventory={inventory} player={player} />
   }
 
   return (
@@ -88,14 +90,14 @@ function Game({ game }) {
   todo:
   - [DONE] rocks drop quartz 10% of the time
   - [DONE] sell quartz for money (1 ea)
-  - buy workbench with money ($5)
-  - use rocks to make forge, 10 rocks
+  - [DONE] buy workbench with money ($5)
+  - [DONE] use rocks to make forge, 10 rocks
   - [DONE] map has moss
-  - 5 moss to build garden
-  - rocks + garden increases stack limit (10 rocks -> 10 stack, 20 -> 15, 40 -> 20, etc)
-  - rocks to buy gym, rocks + gym increases max health (10 rocks -> +5, 15 -> +5, 20 -> +5, etc)
+  - [DONE] 5 moss to build garden
+  - [DONE] rocks + garden increases stack limit (10 rocks -> 10 stack, 20 -> 15, 40 -> 20, etc)
+  - [DONE] rocks to buy gym, rocks + gym increases max health (10 rocks -> +5, 15 -> +5, 20 -> +5, etc)
   - stamina? if there's time
-  - forge turns ores to ingots, 5:1 / 10:1 / 10:1 for cu / fe / mi
+  - [DONE] forge turns ores to ingots, 5:1 / 10:1 / 10:1 for cu / fe / mi
   - sell trinkets $1 cu, $5 fe, $10 mi
   - sell gems also, $25
   - make trinkets with workbench (1 ingot ea)
@@ -112,19 +114,37 @@ function Workshop({ game, onAction, options }) {
   const linkify = links => links.map(link => <WorkshopLink key={link.action} text={link.text} action={link.action} enabled={link.enabled} onAction={onAction}/>)
   const marketLinks = linkify(options.filter(o => o.room === 'market'))
   const mineLinks = linkify(options.filter(o => o.room === 'mine'))
+  const forgeLinks = linkify(options.filter(o => o.room === 'forge'))
+  const workbenchLinks = linkify(options.filter(o => o.room === 'workbench'))
+  const gardenLinks = linkify(options.filter(o => o.room === 'garden'))
+  const gymLinks = linkify(options.filter(o => o.room === 'gym'))
 
   return (
     <div className='workshop'>
-      <div className='workstation mine'>
-        <div>mine:</div><br/>
-        {mineLinks}
-      </div>
       <div className='workstation market'>
         <div>market:</div><br/>
         {marketLinks}
       </div>
-      <div className='workstation forge'>forge</div>
-      <div className='workstation workbench'>workbench</div>
+      <div className='workstation forge'>
+        <div>forge</div><br/>
+        {forgeLinks}
+      </div>
+      <div className='workstation garden'>
+        <div>garden</div><br/>
+        {gardenLinks}
+      </div>
+      <div className='workstation workbench'>
+        <div>workbench</div><br/>
+        {workbenchLinks}
+      </div>
+      <div className='workstation gym'>
+        <div>gym</div><br/>
+        {gymLinks}
+      </div>
+      <div className='workstation mine'>
+        <div>mine:</div><br/>
+        {mineLinks}
+      </div>
     </div>
   )
 }
@@ -178,10 +198,12 @@ function divList(strs) {
   return divs
 }
 
-function Status({ tooltip, ground, actions, inventory }) {
+function Status({ tooltip, ground, actions, inventory, player }) {
   return (
     <div className='status'>
       <div className='tooltip'>{tooltip || '\u00A0'}</div>
+      <div className='player'>Player:</div>
+      {divList(player)}
       <br/>
       <div className='inventory'>Inventory:</div>
       {divList(inventory)}
@@ -196,9 +218,13 @@ function Status({ tooltip, ground, actions, inventory }) {
   )
 }
 
-function WorkshopStatus({ stockpile, inventory }) {
+function WorkshopStatus({ stockpile, inventory, player }) {
   return (
     <div className='status'>
+      <br/>
+      <div className='player'>Player:</div>
+      {divList(player)}
+      <br/>
       <div className='inventory'>Inventory:</div>
       {divList(inventory)}
       <br/>

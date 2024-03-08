@@ -24,3 +24,11 @@ export function makeMoss(ecs, loc) {
     stockable: true
   })
 }
+
+export function makeIngot(ecs, name) {
+  return ecs.add({
+    named: new Named(name),
+    carryable: new Carryable(name),
+    stockable: true
+  })
+}
