@@ -74,6 +74,12 @@ function Game({ game }) {
   } else if (game.gameMode === 'workshop') {
     mainPanel = <Workshop game={game} onAction={onAction} options={workshopOptions} />
     statusPanel = <WorkshopStatus stockpile={stockpile} inventory={inventory} player={player} />
+  } else if (game.gameMode === 'victory') {
+    mainPanel = <Victory/>
+    statusPanel = <WorkshopStatus stockpile={stockpile} inventory={inventory} player={player} />
+  } else if (game.gameMode === 'defeat') {
+    mainPanel = <Defeat/>
+    statusPanel = <Status tooltip={''} inventory={inventory} ground={ground} actions={actions} player={player} />
   }
 
   return (
@@ -106,7 +112,7 @@ function Game({ game }) {
   - [DONE] make better pick with iron (10 ingots)
   - [EW] leather dropped by killing mobs, 25% chance
   - [DONE] better pick is the only one that can mine gems and mithril
-  - n mithril ingots + m gems = amulet of yendor
+  - [DONE] n mithril ingots + m gems = amulet of yendor
   - buy gloves: auto-pickup mined ore / gems (not rocks / qtz) $25
   - [DONE] buy better packs: more inv slots (expensive though, $25 -> 5, $50 -> 10)
   - [DONE] buy health potions, refill health to full, $1
@@ -189,6 +195,31 @@ function Screen({ display, onHover }) {
   }, [ref.current, display, setStatus, clearStatus])
 
   return <div className='map' ref={ref}/>
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function Victory() {
+  return (
+    <div className='victory'>
+      You win!<br/><br/>
+      You have crafted the Amulet of Yendor, and can now retire as a legendary craftsman.
+      This magnificent artifact will be treasured and sought after by adventurers for centuries to come.<br/><br/>
+      Congratulations!
+    </div>
+  )
+}
+
+function Defeat() {
+  return (
+    <div className='victory'>
+      You died!<br/><br/>
+      You have fallen in the mines, and failed in your quest to become a legendary craftsman. Your name and deeds
+      will be forgotten, unless you reload the page so one of your descendants can avenge your demise and complete
+      your task.<br/><br/>
+      Refresh to try again!
+    </div>
+  )
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

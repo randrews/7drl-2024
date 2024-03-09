@@ -164,6 +164,7 @@ export class GameState {
       } else {
         this.bumpAll([x, y])
       }
+      this.tick()
       this.updateIndex()
     }
   }
@@ -365,6 +366,14 @@ export class GameState {
 
     // We've just changed a lot of things
     this.updateIndex()
+  }
+
+  tick() {
+    this.checkGameEnd()
+  }
+
+  checkGameEnd() {
+    if (this.playerStats.hp <= 0) { this.gameMode = 'defeat' }
   }
   
   workshopOptions() { return Workshop.workshopOptions(this.ecs, this.workshopId, this.playerId) }

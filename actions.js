@@ -46,6 +46,7 @@ const Pickup = {
     game.inventory.giveItem(id) ? // Try to pick up...
       game.ecs.removeComponent(id, 'onMap') : // Succeed? remove it from the map
       game.log('No room!') // Fail? say so
+    game.tick()
   }
 }
 
@@ -69,6 +70,7 @@ const Drop = {
     }
 
     game.inventory.dropItem(id, game.playerPos)
+    game.tick()
   }
 }
 

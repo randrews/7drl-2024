@@ -28,6 +28,8 @@ a:visited { color: #ff9090; }
 }
 
 .game {
+    height: 100%;
+    width: 100%;
     display: grid;
     grid-template-columns: auto 200px;
     grid-template-rows: auto 8em;
@@ -55,6 +57,12 @@ a:visited { color: #ff9090; }
     padding: 1em;
     column-gap: 1em;
     row-gap: 1em;
+}
+
+.victory {
+    grid-area: 1 / 1 / 2 / 2;
+    padding: 5em;
+    text-align: center;
 }
 
 .workstation {

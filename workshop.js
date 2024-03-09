@@ -58,9 +58,9 @@ export function workshopOptions(ecs, workshopId, playerId) {
     links.push(new Link('workbench', `Copper toy (-1 ingot)`, 'cu trinket', cuI > 0))
     links.push(new Link('workbench', `Iron tool (-1 ingot)`, 'fe trinket', feI > 0))
     links.push(new Link('workbench', `Mithril ring (-1 ingot)`, 'mi trinket', miI > 0))
-    links.push(new Link('workbench', `Better pick (-${VALUES.pick} fe ingot)`, 'better pick', feI >= VALUES.pick))
     links.push(new Link('workbench', `Brew potion (-${VALUES.potion} moss)`, 'potion', moss >= VALUES.potion))
     links.push(new Link('workbench', `Gem sensor (-${VALUES.sensor} quartz)`, 'sensor', quartz >= VALUES.sensor))
+    links.push(new Link('workbench', `Amulet of Yendor (-${VALUES.amGems} gems, -${VALUES.amMithril} MI)`, 'amulet', true || miI >= VALUES.amMithril && gems >= VALUES.amGems))
   } else {
     links.push(new Link('workbench', `Buy workbench (-$${VALUES.workbench})`, 'buy workbench', money >= VALUES.workbench))
   }
@@ -70,6 +70,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
     links.push(new Link('forge', `Smelt copper (-${VALUES.cu} ore)`, 'smelt cu', cu >= VALUES.cu ))
     links.push(new Link('forge', `Smelt iron (-${VALUES.fe} ore)`, 'smelt fe', fe >= VALUES.fe ))
     links.push(new Link('forge', `Smelt mithril (-${VALUES.mi} ore)`, 'smelt mi', mi >= VALUES.mi ))
+    links.push(new Link('forge', `Better pick (-${VALUES.pick} fe ingot)`, 'better pick', feI >= VALUES.pick))
   } else {
     links.push(new Link('forge', `Build (-${VALUES.forge} rocks)`, 'build forge', rocks >= VALUES.forge ))
   }
@@ -194,6 +195,11 @@ actions['potion'] = (game) => {
     game.log('No room to carry another potion!')
     game.ecs.remove(id)
   }
+}
+
+actions['amulet'] = (game) => {
+  game.log('You craft the amulet, and win the game!')
+  game.gameMode = 'victory'
 }
 
 const oreNames = { cu: 'copper', fe: 'iron', mi: 'mithril' }

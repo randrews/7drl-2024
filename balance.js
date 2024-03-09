@@ -45,4 +45,6 @@ export const VALUES = {
   pack: 25,
   potion: 3,
   sensor: 10,
+  amGems: 5,
+  amMithril: 5,
 }
