@@ -110,6 +110,7 @@ function Game({ game }) {
   - buy gloves: auto-pickup mined ore / gems (not rocks / qtz) $25
   - [DONE] buy better packs: more inv slots (expensive though, $25 -> 5, $50 -> 10)
   - [DONE] buy health potions, refill health to full, $1
+  - [DONE] climbing down to lower levels
 */
 
 function Workshop({ game, onAction, options }) {

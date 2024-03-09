@@ -12,7 +12,7 @@ export default class Map {
   constructor(w, h, level, gemsVisible) {
     this.w = w
     this.h = h
-    this.level = level || 3
+    this.level = level
     this.gemsVisible = gemsVisible
 
     // Draw some cessular caverns

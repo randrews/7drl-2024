@@ -42,7 +42,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
   if (stockpile.hasAny('copper trinket')) { links.push(new Link('market', `Sell copper trinket (+$${VALUES.cuTrinket})`, 'sell cu trinket', true)) }
   if (stockpile.hasAny('iron trinket')) { links.push(new Link('market', `Sell iron trinket (+$${VALUES.feTrinket})`, 'sell fe trinket', true)) }
   if (stockpile.hasAny('mithril trinket')) { links.push(new Link('market', `Sell mithril trinket (+$${VALUES.miTrinket})`, 'sell mi trinket', true)) }
-  if (inventory.inventoryLimit === 3) { links.push(new Link('market', `Buy larger pack (-$${VALUES.pack})`, 'buy pack', money >= VALUES.pack)) }
+  links.push(new Link('market', `Buy larger pack (-$${packCost(inventory.inventoryLimit)})`, 'buy pack', money >= packCost(inventory.inventoryLimit)))
 
   if (DEBUG) {
     links.push(new Link('market', `cheat cu`, 'cheat cu', true))
@@ -94,6 +94,10 @@ export function workshopOptions(ecs, workshopId, playerId) {
 function meditateCost(stackLimit) {
   const level = stackLimit / 5 - 1
   return 10 * Math.pow(2, level)  
+}
+
+function packCost(currentLimit) {
+  return 10 * (currentLimit - 2)
 }
 
 export const actions = {}
@@ -168,10 +172,9 @@ actions['better pick'] = (game) => {
 }
 
 actions['buy pack'] = (game) => {
-  game.log('This bag is much larger!')
-  game.wallet.transact(VALUES.pack * -1)
-  game.playerStats.gear.push('larger pack')
-  game.inventory.inventoryLimit = 8
+  game.log('Can always use more space in the bag')
+  game.wallet.transact(packCost(game.inventory.inventoryLimit) * -1)
+  game.inventory.inventoryLimit++
 }
 
 actions['sensor'] = (game) => {

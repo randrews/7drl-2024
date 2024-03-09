@@ -90,7 +90,9 @@ const Climb = {
       game.enterWorkshop()
       return true
     case 'd':
-      game.log('Climbing to next level')
+      const level = game.map.level
+      game.log(`Climbing to level ${level + 1}`)
+      game.climbDown()
       game.inputHandler = null
       return true
     default:

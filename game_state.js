@@ -9,22 +9,17 @@ import * as Workshop from './workshop'
 
 export class GameState {
   constructor() {
-    this.map = new Map(80, 40)
+    this.map = new Map(80, 40, 1, false)
     this.ecs = new ECS()
 
-    const pos = this.map.validLadderPosition()
-
     // Add the player and the ladder to the world
-    this.playerId = this.ecs.add({ onMap: new OnMap(pos), inventory: new Inventory(this.ecs), wallet: new Wallet(0), player: new Player() })
-    this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
+    this.playerId = this.ecs.add({ inventory: new Inventory(this.ecs), wallet: new Wallet(0), player: new Player() })
 
-    // Throw some moss on the ground
-    this.makeMoss(10)
+    this.setupMap(this.map)
+    this.updateIndex()
 
     // Create the workshop
     this.workshopId = this.makeWorkshop()
-
-    this.updateIndex()
 
     // ui state:
     this.logLines = []
@@ -34,6 +29,16 @@ export class GameState {
     
     // gameMode is either mine or workshop
     this.gameMode = 'mine'
+  }
+
+  setupMap(map) {
+    // Where we'll put the ladder and player
+    const pos = map.validLadderPosition()
+    this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
+    this.ecs.addComponent(this.playerId, 'onMap', new OnMap(pos))
+
+    // Throw some moss on the ground
+    this.makeMoss(map, 10)
   }
 
   draw(display) {
@@ -213,10 +218,10 @@ export class GameState {
     }
   }
 
-  makeMoss(count) {
+  makeMoss(map, count) {
     let mossLocs = {}
     while (Object.keys(mossLocs).length < count) {
-      const ml = this.map.validMossPosition()
+      const ml = map.validMossPosition()
       const key = this.toKey(ml)
       if (!mossLocs[key]) {
         makeMoss(this.ecs, ml)
@@ -340,9 +345,26 @@ export class GameState {
     this.playerStats.hp = this.playerStats.maxHp
   }
   
-  climbDowm() {
-    // generate a new map
-    // higher level, same gemsVisible
+  climbDown() {
+    // generate a new map: higher level, same gemsVisible
+    const nextLevel = new Map(this.map.w, this.map.h, this.map.level + 1, this.map.gemsVisible)
+
+    // Remove the player from the old map (so we don't delete him)
+    this.ecs.removeComponent(this.playerId, 'onMap')
+
+    // Remove anything on the old map
+    const ids = []
+    this.ecs.find(['onMap'], id => ids.push(id))
+    ids.forEach(id => this.ecs.remove(id))
+
+    // Setup props on the new map (also placing the ladder and player there)
+    this.setupMap(nextLevel)
+
+    // Finally...
+    this.map = nextLevel
+
+    // We've just changed a lot of things
+    this.updateIndex()
   }
   
   workshopOptions() { return Workshop.workshopOptions(this.ecs, this.workshopId, this.playerId) }
