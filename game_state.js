@@ -100,6 +100,7 @@ export class GameState {
       switch (cell.type) {
       case 'wall':
         if (!cell.exposed) { return '' } // Hidden is hidden!
+        else if (cell.ore === 'gem') { return 'gem' } // Show ore types
         else if (cell.ore) { return `${cell.ore} ore` } // Show ore types
         else { return 'rock' } // plain old rock
         break

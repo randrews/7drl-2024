@@ -25,10 +25,15 @@ const Pickup = {
     return game.anyAt(game.playerPos, ['carryable'])
   },
   verb: (game) => {
-    game.log('Pick up what? (or [q]uit)')
-    game.selectMode = true
-    game.pendingAction = Pickup
-    game.inputHandler = selectItemHandler
+    if (game.onGround().length > 1) {
+      game.log('Pick up what? (or [q]uit)')
+      game.selectMode = true
+      game.pendingAction = Pickup
+      game.inputHandler = selectItemHandler
+    } else {
+      const ids = game.idsAt(game.playerPos)
+      game.ecs.forEach(ids, ['carryable'], id => Pickup.finish(game, id))
+    }
   },
   finish: (game, id) => {
     game.debug(`Picking up ${id}`)
@@ -43,9 +48,13 @@ const Pickup = {
       return
     }
 
-    game.inventory.giveItem(id) ? // Try to pick up...
-      game.ecs.removeComponent(id, 'onMap') : // Succeed? remove it from the map
+    // Try to pick up...
+    if (game.inventory.giveItem(id)) {
+      game.ecs.removeComponent(id, 'onMap') // Succeed? remove it from the map
+      game.updateIndex()
+    } else {
       game.log('No room!') // Fail? say so
+    }
     game.tick()
   }
 }

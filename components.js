@@ -50,7 +50,7 @@ export class Display {
   draw([x, y], display) {
     switch (this.type) {
     case 'ladder':
-      display.draw(x, y, '=', '#dd0')
+      display.draw(x, y, '=', '#000', '#dd0')
       break
     case 'copper ore':
       display.draw(x, y, 'o', COLORS.copper)

@@ -60,7 +60,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
     links.push(new Link('workbench', `Mithril ring (-1 ingot)`, 'mi trinket', miI > 0))
     links.push(new Link('workbench', `Brew potion (-${VALUES.potion} moss)`, 'potion', moss >= VALUES.potion))
     links.push(new Link('workbench', `Gem sensor (-${VALUES.sensor} quartz)`, 'sensor', quartz >= VALUES.sensor))
-    links.push(new Link('workbench', `Amulet of Yendor (-${VALUES.amGems} gems, -${VALUES.amMithril} MI)`, 'amulet', true || miI >= VALUES.amMithril && gems >= VALUES.amGems))
+    links.push(new Link('workbench', `Amulet of Yendor (-${VALUES.amGems} gems, -${VALUES.amMithril} MI)`, 'amulet', miI >= VALUES.amMithril && gems >= VALUES.amGems))
   } else {
     links.push(new Link('workbench', `Buy workbench (-$${VALUES.workbench})`, 'buy workbench', money >= VALUES.workbench))
   }

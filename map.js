@@ -26,9 +26,6 @@ export default class Map {
       this.data[x + y * this.w] = { type: empty ? 'floor' : 'wall' }
     }, 1)
 
-    // Hide the cells in interior walls
-    this.calculateExposed()
-
     // Place ore veins
     let ores = { copper: 25, iron: 0, mithril: 0 }
     if (this.level === 2) {
@@ -52,6 +49,9 @@ export default class Map {
         this.placeGem(x, y)
       }
     }
+
+    // Hide the cells in interior walls
+    this.calculateExposed()
 
     // populate hp and hardness
     this.eachCell((_x, _y, cell) => {
