@@ -97,6 +97,7 @@ export class GameState {
       return this.ecs.get(ent, 'named').hover
     } else {
       const cell = this.map.at(pos)
+      if (!cell) { return } // Layout / font size issue on Linux
       switch (cell.type) {
       case 'wall':
         if (!cell.exposed) { return '' } // Hidden is hidden!

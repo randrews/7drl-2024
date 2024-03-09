@@ -29,8 +29,8 @@ a:visited { color: #ff9090; }
 
 .game {
     display: grid;
-    grid-template-columns: 800px 200px;
-    grid-template-rows: 40em 8em;
+    grid-template-columns: auto 200px;
+    grid-template-rows: auto 8em;
 }
 .map { grid-area: 1 / 1 / 2 / 2; }
 .status { grid-area: 1 / 2 / 2 / 3; }
@@ -60,6 +60,7 @@ a:visited { color: #ff9090; }
 .workstation {
     border-radius: 2em;
     padding: 1em;
+    min-height: 200px;
 }
 
 .workstation.market {
