@@ -25,10 +25,19 @@ export function makeMoss(ecs, loc) {
   })
 }
 
+// Trinkets are identical to these, so no separate fn
 export function makeIngot(ecs, name) {
   return ecs.add({
     named: new Named(name),
     carryable: new Carryable(name),
     stockable: true
+  })
+}
+
+export function makePotion(ecs) {
+  return ecs.add({
+    named: new Named('potion'),
+    carryable: new Carryable('potion'),
+    display: new Display('potion')
   })
 }

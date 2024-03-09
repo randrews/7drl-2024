@@ -63,6 +63,10 @@ export class Display {
       break
     case 'moss':
       display.draw(x, y, '%', '#0d3')
+      break
+    case 'potion':
+      display.draw(x, y, 'i', '#d33')
+      break
     }
   }
 }
@@ -92,7 +96,9 @@ export class Player {
   constructor() {
     this.hp = 10
     this.maxHp = 10
-    this.tool = 'pickaxe'
+    this.tool = 'bronze pickaxe'
+    this.dmg = 3 // Damage done to wall on bumping
+    this.hardness = 1 // Max hardness of material that can be hit
     this.gear = []
   }
 

@@ -1,5 +1,5 @@
-import { VALUES } from './balance'
-import { makeIngot } from './types'
+import { VALUES, DEBUG } from './balance'
+import { makeIngot, makePotion } from './types'
 
 export class Link {
   constructor(room, text, action, active) {
@@ -24,8 +24,12 @@ export function workshopOptions(ecs, workshopId, playerId) {
   const cu = stockpile.countType('copper ore')
   const fe = stockpile.countType('iron ore')
   const mi = stockpile.countType('mithril ore')
+  const cuI = stockpile.countType('copper ingot')
+  const feI = stockpile.countType('iron ingot')
+  const miI = stockpile.countType('mithril ingot')
   const inventory = ecs.get(playerId, 'inventory')
-  const maxHp = ecs.get(playerId, 'player').maxHp
+  const player = ecs.get(playerId, 'player')
+  const maxHp = player.maxHp
 
   const links = [
     new Link('mine', 'Return to mine', 'return-to-mine', true)
@@ -33,9 +37,24 @@ export function workshopOptions(ecs, workshopId, playerId) {
 
   // Selling things for money
   if (stockpile.hasAny('quartz')) { links.push(new Link('market', `Sell quartz (+$${VALUES.quartz})`, 'sell quartz', true)) }
+  if (stockpile.hasAny('copper trinket')) { links.push(new Link('market', `Sell copper trinket (+$${VALUES.cuTrinket})`, 'sell cu trinket', true)) }
+  if (stockpile.hasAny('iron trinket')) { links.push(new Link('market', `Sell iron trinket (+$${VALUES.feTrinket})`, 'sell fe trinket', true)) }
+  if (stockpile.hasAny('mithril trinket')) { links.push(new Link('market', `Sell mithril trinket (+$${VALUES.miTrinket})`, 'sell mi trinket', true)) }
+  if (inventory.inventoryLimit === 3) { links.push(new Link('market', `Buy larger pack (-$${VALUES.pack})`, 'buy pack', money >= VALUES.pack)) }
+
+  if (DEBUG) {
+    links.push(new Link('market', `cheat cu`, 'cheat cu', true))
+    links.push(new Link('market', `cheat fe`, 'cheat fe', true))
+    links.push(new Link('market', `cheat mi`, 'cheat mi', true))
+  }
 
   // The workbench room
   if (rooms.workbench) {
+    links.push(new Link('workbench', `Copper toy (-1 ingot)`, 'cu trinket', cuI > 0))
+    links.push(new Link('workbench', `Iron tool (-1 ingot)`, 'fe trinket', feI > 0))
+    links.push(new Link('workbench', `Mithril ring (-1 ingot)`, 'mi trinket', miI > 0))
+    links.push(new Link('workbench', `Better pick (-${VALUES.pick} fe ingot)`, 'better pick', feI >= VALUES.pick))
+    links.push(new Link('workbench', `Brew potion (-${VALUES.potion} moss)`, 'potion', moss >= VALUES.potion))
   } else {
     links.push(new Link('workbench', `Buy workbench (-$${VALUES.workbench})`, 'buy workbench', money >= VALUES.workbench))
   }
@@ -67,7 +86,6 @@ export function workshopOptions(ecs, workshopId, playerId) {
 }
 
 function meditateCost(stackLimit) {
-  return 1
   const level = stackLimit / 5 - 1
   return 10 * Math.pow(2, level)  
 }
@@ -128,6 +146,32 @@ actions['train'] = (game) => {
   game.playerStats.hp += 5
 }
 
+actions['better pick'] = (game) => {
+  game.log('You craft a harder, stronger pickaxe!')
+  charge(game, 'iron ingot', VALUES.pick)
+  game.playerStats.tool = 'iron pickaxe'
+  game.playerStats.dmg = 5
+  game.playerStats.hardness = 2
+}
+
+actions['buy pack'] = (game) => {
+  game.log('This bag is much larger!')
+  game.wallet.transact(VALUES.pack * -1)
+  game.playerStats.gear.push('larger pack')
+  game.inventory.inventoryLimit = 8
+}
+
+actions['potion'] = (game) => {
+  const id = makePotion(game.ecs)
+  if (game.inventory.giveItem(id)) {
+    game.log('You brew a health potion')
+    charge(game, 'moss', VALUES.potion)
+  } else {
+    game.log('No room to carry another potion!')
+    game.ecs.remove(id)
+  }
+}
+
 const oreNames = { cu: 'copper', fe: 'iron', mi: 'mithril' }
 
 Object.keys(oreNames).forEach((type) => {
@@ -136,6 +180,25 @@ Object.keys(oreNames).forEach((type) => {
     game.log('Smelting an ingot')
     charge(game, `${name} ore`, VALUES[type])
     const id = makeIngot(game.ecs, `${name} ingot`)
+    game.stockpile.giveItem(id)
+  }
+
+  actions[`${type} trinket`] = (game) => {
+    game.log('Crafting a trinket')
+    charge(game, `${name} ingot`, 1)
+    const id = makeIngot(game.ecs, `${name} trinket`)
+    game.stockpile.giveItem(id)
+  }
+
+  actions[`sell ${type} trinket`] = (game) => {
+    game.log('Selling a trinket')
+    charge(game, `${name} trinket`, 1)
+    game.wallet.transact(VALUES[`${type}Trinket`])
+  }
+
+  actions[`cheat ${type}`] = (game) => {
+    game.log(`Spawning ${name} ore`)
+    const id = makeIngot(game.ecs, `${name} ore`)
     game.stockpile.giveItem(id)
   }
 })

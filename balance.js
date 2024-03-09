@@ -1,3 +1,6 @@
+// If true, debug logs are enabled
+export const DEBUG = true
+
 export const COLORS = {
   copper: '#fa0',
   rock: '#ddd',
@@ -6,18 +9,24 @@ export const COLORS = {
 
 // Total HP a square of this has
 export const HP = {
-    rock: 10,
-    copper: 10
+  rock: 10,
+  copper: 10,
+  iron: 15,
+  mithril: 20,
+  gem: 15,
 }
 
 // minimum hardness of tool that can crack this
 export const HARDNESS = {
-    rock: 1,
-    copper: 1
+  rock: 1,
+  copper: 1,
+  iron: 1,
+  mithril: 2,
+  gem: 2,
 }
 
 export const VALUES = {
-  quartz: 500, // TODO should be 1
+  quartz: 1,
   forge: 10,
   workbench: 3,
   gym: 10,
@@ -25,4 +34,10 @@ export const VALUES = {
   cu: 5,
   fe: 5,
   mi: 5,
+  pick: 10,
+  cuTrinket: 5,
+  feTrinket: 10,
+  miTrinket: 25,
+  pack: 25,
+  potion: 3,
 }

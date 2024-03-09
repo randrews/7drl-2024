@@ -96,18 +96,18 @@ function Game({ game }) {
   - [DONE] 5 moss to build garden
   - [DONE] rocks + garden increases stack limit (10 rocks -> 10 stack, 20 -> 15, 40 -> 20, etc)
   - [DONE] rocks to buy gym, rocks + gym increases max health (10 rocks -> +5, 15 -> +5, 20 -> +5, etc)
-  - stamina? if there's time
+  - [NAH] stamina? if there's time
   - [DONE] forge turns ores to ingots, 5:1 / 10:1 / 10:1 for cu / fe / mi
-  - sell trinkets $1 cu, $5 fe, $10 mi
+  - [DONE] sell trinkets $1 cu, $5 fe, $10 mi
   - sell gems also, $25
-  - make trinkets with workbench (1 ingot ea)
-  - make better pick with iron (10 ingots)
-  - leather dropped by killing mobs, 25% chance
-  - better pick is the only one that can mine gems and mithril
+  - [DONE] make trinkets with workbench (1 ingot ea)
+  - [DONE] make better pick with iron (10 ingots)
+  - [EW] leather dropped by killing mobs, 25% chance
+  - [DONE] better pick is the only one that can mine gems and mithril
   - n mithril ingots + m gems = amulet of yendor
   - buy gloves: auto-pickup mined ore / gems (not rocks / qtz) $25
-  - buy better packs: more inv slots (expensive though, $25 -> 5, $50 -> 10)
-  - buy health potions, refill health to full, $1
+  - [DONE] buy better packs: more inv slots (expensive though, $25 -> 5, $50 -> 10)
+  - [DONE] buy health potions, refill health to full, $1
 */
 
 function Workshop({ game, onAction, options }) {

@@ -2,13 +2,10 @@ import Map from './map'
 import ECS from './ecs'
 import * as Rot from 'rot-js'
 import { OnMap, Named, Display, Carryable, Inventory, Drinkable, Wallet, Player } from './components'
-import { COLORS } from './balance'
+import { COLORS, DEBUG } from './balance'
 import Actions from './actions'
 import { makeMineral, makeMoss } from './types'
 import * as Workshop from './workshop'
-
-// If true, debug logs are enabled
-const DEBUG = true
 
 export class GameState {
   constructor() {
@@ -28,12 +25,6 @@ export class GameState {
     this.workshopId = this.makeWorkshop()
 
     this.updateIndex()
-
-    // Player stats stuff:
-    this.tool = {
-      dmg: 3, // Damage done to wall on bumping
-      hardness: 1 // Max hardness of material that can be hit
-    }
 
     // ui state:
     this.logLines = []
@@ -189,10 +180,10 @@ export class GameState {
     const cell = this.map.at(loc)
     if (cell.type === 'wall') {
       const name = cell.ore ? `${cell.ore} ore` : 'rock'
-      if (cell.hardness > this.tool.hardness) {
+      if (cell.hardness > this.playerStats.hardness) {
         this.log(`You need a better tool for ${name}`)
       } else {
-        cell.hp -= this.tool.dmg
+        cell.hp -= this.playerStats.dmg
         if (cell.hp > 0) { this.log(`Mining ${name}`) }
         else {
           // Mined! Replace the map cell with a floor

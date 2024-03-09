@@ -100,4 +100,20 @@ const Climb = {
   }
 }
 
-export default [Pickup, Drop, Climb]
+const Quaff = {
+  key: 'q',
+  description: '[Q]uaff',
+  canDo: (game) => game.inventory.hasAny('potion'),
+  verb: (game) => {
+    if (game.playerStats.hp < game.playerStats.maxHp) {
+      game.playerStats.hp = game.playerStats.maxHp
+      const id = game.inventory.removeType('potion')
+      game.ecs.remove(id)
+      game.log('Your wounds are healed!')
+    } else {
+      game.log("You don't need a potion right now")
+    }
+  },
+}
+
+export default [Pickup, Drop, Climb, Quaff]
