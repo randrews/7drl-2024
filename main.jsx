@@ -58,6 +58,7 @@ function Game({ game }) {
 
   const onAction = useCallback((event) => {
     game.workshopAction(event.target.getAttribute('action'))
+    if (game.gameMode === 'mine') { game.draw(display) }
     updateEverything()
   }, [game, updateEverything])
 
@@ -99,7 +100,8 @@ function Game({ game }) {
   - [NAH] stamina? if there's time
   - [DONE] forge turns ores to ingots, 5:1 / 10:1 / 10:1 for cu / fe / mi
   - [DONE] sell trinkets $1 cu, $5 fe, $10 mi
-  - sell gems also, $25
+  - [DONE] sell gems also, $25
+  - [DONE] a sensor to detect gems (10 quartz)
   - [DONE] make trinkets with workbench (1 ingot ea)
   - [DONE] make better pick with iron (10 ingots)
   - [EW] leather dropped by killing mobs, 25% chance

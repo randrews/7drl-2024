@@ -3,7 +3,10 @@ export const DEBUG = true
 
 export const COLORS = {
   copper: '#fa0',
+  iron: '#f44',
+  mithril: '#0ff',
   rock: '#ddd',
+  gem: '#99f',
   quartz: '#fff'
 }
 
@@ -27,6 +30,7 @@ export const HARDNESS = {
 
 export const VALUES = {
   quartz: 1,
+  gem: 25,
   forge: 10,
   workbench: 3,
   gym: 10,
@@ -40,4 +44,5 @@ export const VALUES = {
   miTrinket: 25,
   pack: 25,
   potion: 3,
+  sensor: 10,
 }

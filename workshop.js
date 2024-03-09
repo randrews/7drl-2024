@@ -20,6 +20,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
   const rooms = ecs.get(workshopId, 'rooms')
   const money = ecs.get(playerId, 'wallet').amount
   const rocks = stockpile.countType('rock')
+  const quartz = stockpile.countType('quartz')
   const moss = stockpile.countType('moss')
   const cu = stockpile.countType('copper ore')
   const fe = stockpile.countType('iron ore')
@@ -37,6 +38,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
 
   // Selling things for money
   if (stockpile.hasAny('quartz')) { links.push(new Link('market', `Sell quartz (+$${VALUES.quartz})`, 'sell quartz', true)) }
+  if (stockpile.hasAny('gem')) { links.push(new Link('market', `Sell gem (+$${VALUES.gem})`, 'sell gem', true)) }
   if (stockpile.hasAny('copper trinket')) { links.push(new Link('market', `Sell copper trinket (+$${VALUES.cuTrinket})`, 'sell cu trinket', true)) }
   if (stockpile.hasAny('iron trinket')) { links.push(new Link('market', `Sell iron trinket (+$${VALUES.feTrinket})`, 'sell fe trinket', true)) }
   if (stockpile.hasAny('mithril trinket')) { links.push(new Link('market', `Sell mithril trinket (+$${VALUES.miTrinket})`, 'sell mi trinket', true)) }
@@ -46,6 +48,9 @@ export function workshopOptions(ecs, workshopId, playerId) {
     links.push(new Link('market', `cheat cu`, 'cheat cu', true))
     links.push(new Link('market', `cheat fe`, 'cheat fe', true))
     links.push(new Link('market', `cheat mi`, 'cheat mi', true))
+    links.push(new Link('market', `cheat moss`, 'cheat moss', true))
+    links.push(new Link('market', `cheat quartz`, 'cheat quartz', true))
+    links.push(new Link('market', `cheat gem`, 'cheat gem', true))
   }
 
   // The workbench room
@@ -55,6 +60,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
     links.push(new Link('workbench', `Mithril ring (-1 ingot)`, 'mi trinket', miI > 0))
     links.push(new Link('workbench', `Better pick (-${VALUES.pick} fe ingot)`, 'better pick', feI >= VALUES.pick))
     links.push(new Link('workbench', `Brew potion (-${VALUES.potion} moss)`, 'potion', moss >= VALUES.potion))
+    links.push(new Link('workbench', `Gem sensor (-${VALUES.sensor} quartz)`, 'sensor', quartz >= VALUES.sensor))
   } else {
     links.push(new Link('workbench', `Buy workbench (-$${VALUES.workbench})`, 'buy workbench', money >= VALUES.workbench))
   }
@@ -101,6 +107,13 @@ actions['sell quartz'] = (game) => {
   if (game.stockpile.removeType('quartz')) {
     game.log('Selling a quartz')
     game.wallet.transact(VALUES.quartz)
+  }
+}
+
+actions['sell gem'] = (game) => {
+  if (game.stockpile.removeType('gem')) {
+    game.log('Selling a gem')
+    game.wallet.transact(VALUES.gem)
   }
 }
 
@@ -161,6 +174,14 @@ actions['buy pack'] = (game) => {
   game.inventory.inventoryLimit = 8
 }
 
+actions['sensor'] = (game) => {
+  game.log('You craft a sensor to detect gems')
+  charge(game, 'quartz', VALUES.sensor)
+  game.playerStats.gear.push('gem sensor')
+  game.map.gemsVisible = true
+  game.map.update()
+}
+
 actions['potion'] = (game) => {
   const id = makePotion(game.ecs)
   if (game.inventory.giveItem(id)) {
@@ -201,4 +222,13 @@ Object.keys(oreNames).forEach((type) => {
     const id = makeIngot(game.ecs, `${name} ore`)
     game.stockpile.giveItem(id)
   }
+})
+
+const names = ['moss', 'quartz', 'gem']
+names.forEach((type) => {
+  actions[`cheat ${type}`] = (game) => {
+    game.log(`Spawning ${type}`)
+    const id = makeIngot(game.ecs, type)
+    game.stockpile.giveItem(id)
+  }  
 })

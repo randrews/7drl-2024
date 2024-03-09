@@ -55,6 +55,15 @@ export class Display {
     case 'copper ore':
       display.draw(x, y, 'o', COLORS.copper)
       break
+    case 'iron ore':
+      display.draw(x, y, 'o', COLORS.iron)
+      break
+    case 'mithril ore':
+      display.draw(x, y, 'o', COLORS.mithril)
+      break
+    case 'gem':
+      display.draw(x, y, '*', COLORS.gem)
+      break
     case 'rock':
       display.draw(x, y, 'o', COLORS.rock)
       break

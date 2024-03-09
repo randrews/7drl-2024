@@ -9,9 +9,11 @@ import { HP, HARDNESS } from './balance'
 // - ore: What kind of ore you would get for mining this
 
 export default class Map {
-  constructor(w, h) {
+  constructor(w, h, level, gemsVisible) {
     this.w = w
     this.h = h
+    this.level = level || 3
+    this.gemsVisible = gemsVisible
 
     // Draw some cessular caverns
     const cave = new Rot.Map.Cellular(w, h)
@@ -28,9 +30,27 @@ export default class Map {
     this.calculateExposed()
 
     // Place ore veins
-    for (let n = 0; n < 25; n++) {
-      const [x, y] = this.randomCell(rockP)
-      this.oreVein(x, y, 'copper', 10)
+    let ores = { copper: 25, iron: 0, mithril: 0 }
+    if (this.level === 2) {
+      ores = { copper: 15, iron: 10, mithril: 0 }
+    } else if (this.level === 3) {
+      ores = { copper: 5, iron: 15, mithril: 5 }
+    } else if (this.level > 3) {
+      ores = { copper: 5, iron: 10, mithril: 10 }
+    }
+
+    Object.keys(ores).forEach((ore) => {
+      for (let n = 0; n < ores[ore]; n++) {
+        const [x, y] = this.randomCell(rockP)
+        this.oreVein(x, y, ore, 10)
+      }
+    })
+
+    if (this.level > 1) {
+      for (let n = 0; n < 10; n++) {
+        const [x, y] = this.validGemPosition()
+        this.placeGem(x, y)
+      }
     }
 
     // populate hp and hardness
@@ -45,7 +65,7 @@ export default class Map {
   get size() { return [this.w, this.h] }
 
   update() {
-    this.calculateExposed()    
+    this.calculateExposed()
   }
 
   at([x, y]) {
@@ -68,7 +88,7 @@ export default class Map {
   calculateExposed() {
     this.eachCell((x, y, cell) => {
       if (cell.type === 'wall') {
-        cell.exposed = this.neighbor(x, y, floorP)
+        cell.exposed = this.neighbor(x, y, floorP) || (this.gemsVisible && cell.ore === 'gem')
       }
     })
   }
@@ -123,12 +143,21 @@ export default class Map {
     }
   }
   
+  placeGem(x, y) {
+    const cell = this.at([x, y])
+    cell.ore = 'gem'
+  }
+  
   validLadderPosition() {
     return this.randomCell((c, l) => (floorP(c) && !this.neighbor(l[0], l[1], wallP)))
   }
 
   validMossPosition() {
     return this.randomCell(floorP)
+  }
+  
+  validGemPosition() {
+    return this.randomCell((c, l) => (rockP(c) && !this.neighbor(l[0], l[1], floorP)))
   }
 }
 

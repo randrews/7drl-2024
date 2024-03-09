@@ -66,6 +66,9 @@ export class GameState {
           } else {
             switch (cell.ore) {
               case 'copper': display.draw(x, y, '#', COLORS.copper); break
+              case 'iron': display.draw(x, y, '#', COLORS.iron); break
+              case 'mithril': display.draw(x, y, '#', COLORS.mithril); break
+              case 'gem': display.draw(x, y, '*', COLORS.gem); break
             }
           }
           break
@@ -179,9 +182,13 @@ export class GameState {
   mine(loc) {
     const cell = this.map.at(loc)
     if (cell.type === 'wall') {
-      const name = cell.ore ? `${cell.ore} ore` : 'rock'
+      const name = cell.ore === 'gem' ? 'gem' : cell.ore ? `${cell.ore} ore` : 'rock'
       if (cell.hardness > this.playerStats.hardness) {
-        this.log(`You need a better tool for ${name}`)
+        if (name === 'gem') {
+          this.log(`You need a better tool for gems`)
+        } else {
+          this.log(`You need a better tool for ${name}`)
+        }
       } else {
         cell.hp -= this.playerStats.dmg
         if (cell.hp > 0) { this.log(`Mining ${name}`) }
@@ -331,6 +338,11 @@ export class GameState {
     })
     
     this.playerStats.hp = this.playerStats.maxHp
+  }
+  
+  climbDowm() {
+    // generate a new map
+    // higher level, same gemsVisible
   }
   
   workshopOptions() { return Workshop.workshopOptions(this.ecs, this.workshopId, this.playerId) }
