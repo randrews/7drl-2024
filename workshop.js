@@ -39,6 +39,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
   // Selling things for money
   if (stockpile.hasAny('quartz')) { links.push(new Link('market', `Sell quartz (+$${VALUES.quartz})`, 'sell quartz', true)) }
   if (stockpile.hasAny('gem')) { links.push(new Link('market', `Sell gem (+$${VALUES.gem})`, 'sell gem', true)) }
+  if (stockpile.hasAny('copper ingot')) { links.push(new Link('market', `Sell copper ingot (+$1)`, 'sell cu ingot', true)) }
   if (stockpile.hasAny('copper trinket')) { links.push(new Link('market', `Sell copper trinket (+$${VALUES.cuTrinket})`, 'sell cu trinket', true)) }
   if (stockpile.hasAny('iron trinket')) { links.push(new Link('market', `Sell iron trinket (+$${VALUES.feTrinket})`, 'sell fe trinket', true)) }
   if (stockpile.hasAny('mithril trinket')) { links.push(new Link('market', `Sell mithril trinket (+$${VALUES.miTrinket})`, 'sell mi trinket', true)) }
@@ -86,7 +87,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
   if (rooms.gym) {
     links.push(new Link('gym', `Lift rocks (-${maxHp} rocks)`, 'train', rocks >= maxHp))
   } else {
-    links.push(new Link('gym', `Build (-${VALUES.gym} rocks)`, 'build gym', rocks >= VALUES.gym))
+    links.push(new Link('gym', `Buy (-$${VALUES.gym})`, 'build gym', money >= VALUES.gym))
   }
   
   return links
@@ -115,6 +116,13 @@ actions['sell quartz'] = (game) => {
   }
 }
 
+actions['sell cu ingot'] = (game) => {
+  if (game.stockpile.removeType('copper ingot')) {
+    game.log('Selling an ingot')
+    game.wallet.transact(1)
+  }
+}
+
 actions['sell gem'] = (game) => {
   if (game.stockpile.removeType('gem')) {
     game.log('Selling a gem')
@@ -124,7 +132,7 @@ actions['sell gem'] = (game) => {
 
 actions['buy workbench'] = (game) => {
   game.log('Buying a workbench')
-  game.wallet.transact(-5)
+  game.wallet.transact(-3)
   game.rooms.workbench = true
 }
 
@@ -146,14 +154,14 @@ actions['build garden'] = (game) => {
 }
 
 actions['meditate'] = (game) => {
-  game.log('As you ponder the stacked rocks, you see how to carry more in your bag')
+  game.log('As you ponder the stacked rocks, you see how to better organize your bag')
   charge(game, 'rock', meditateCost(game.inventory.stackLimit))
   game.inventory.stackLimit += 5
 }
 
 actions['build gym'] = (game) => {
   game.log('Building a gym')
-  charge(game, 'rock', VALUES.gym)
+  game.wallet.transact(VALUES.gym * -1)
   game.rooms.gym = true
 }
 

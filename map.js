@@ -119,7 +119,7 @@ export default class Map {
       if (!this.emptyCallback(x, y)) { return false } // If there's actually a wall, stop
       return emptyP([x, y]) // User supplied callback, usually "is there another mob here"
     }
-    const path = new Rot.Path.AStar(finish[0], finish[1], passable, { topology: 4 })
+    const path = new Rot.Path.AStar(finish[0], finish[1], passable, { topology: 8 })
     // This computes the _whole path_ even though we only want the first cell, so, ignore
     // oll but the first call to the callback. This would be a good change to the rot.js API
     path.compute(start[0], start[1], (x, y) => {

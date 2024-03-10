@@ -12,7 +12,7 @@ body {
     grid-template-columns: auto 1032px auto;
     /* Height wise, rot.js is much nicer since it'll just use ems like it should. We
        put 50 rows in, then add a further 8 for the log display */
-    grid-template-rows: 1em 50em 2em;
+    grid-template-rows: 1em 52em 2em;
     height: 100vh;
     margin: 0;
 }
@@ -32,7 +32,7 @@ a:visited { color: #ff9090; }
     width: 100%;
     display: grid;
     grid-template-columns: auto 200px;
-    grid-template-rows: auto 8em;
+    grid-template-rows: auto 10em;
 }
 .map { grid-area: 1 / 1 / 2 / 2; }
 .status { grid-area: 1 / 2 / 2 / 3; }

@@ -1,5 +1,5 @@
 // If true, debug logs are enabled
-export const DEBUG = true
+export const DEBUG = false
 
 export const COLORS = {
   copper: '#fa0',
@@ -38,7 +38,7 @@ export const VALUES = {
   cu: 5,
   fe: 5,
   mi: 5,
-  pick: 10,
+  pick: 4,
   cuTrinket: 5,
   feTrinket: 10,
   miTrinket: 25,

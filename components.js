@@ -91,6 +91,9 @@ export class Display {
       case 'elite':
         visible && display.draw(x, y, '&', '#000', '#ee0')
         break
+      case 'body':
+        visible && display.draw(x, y, 'x', '#600')
+        break
     }
   }
 }

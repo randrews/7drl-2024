@@ -51,3 +51,11 @@ export function makeEnemy(ecs, loc, type) {
     enemy: new Enemy(type)
   })
 }
+
+export function makeBody(ecs, loc) {
+  return ecs.add({
+    onMap: new OnMap(loc),
+    named: new Named('body'),
+    display: new Display('body')
+  })
+}

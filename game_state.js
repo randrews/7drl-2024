@@ -3,7 +3,7 @@ import ECS from './ecs'
 import * as Rot from 'rot-js'
 import { OnMap, Named, Display, Carryable, Wallet, Player } from './components'
 import { Inventory } from './inventory'
-import { tickEnemies } from './enemy'
+import { tickEnemies, bumpEnemy, stabEnemy } from './enemy'
 import { COLORS, DEBUG } from './balance'
 import Actions from './actions'
 import { makeMineral, makeMoss, makeEnemy } from './types'
@@ -39,13 +39,14 @@ export class GameState {
     this.ecs.add({ onMap: new OnMap(pos), named: new Named('ladder'), display: new Display('ladder'), climbable: true })
     this.ecs.addComponent(this.playerId, 'onMap', new OnMap(pos))
 
+    // need fov done to build mobs
+    map.calculateVisible(pos)
+
     // Throw some moss on the ground
     this.makeMoss(map, 10)
 
     // Add mobs
     this.makeMobs(map, pos)
-
-    map.calculateVisible(pos)
   }
 
   draw(display) {
@@ -53,10 +54,10 @@ export class GameState {
     this.drawMap(display)
 
     // Draw non-player objects on the map
-    this.ecs.find(['onMap', 'display'], (_id, [onMap, disp]) => {
-      const pos = [onMap.x, onMap.y]
-      disp.draw(pos, display, this)
-    })
+    this.ecs.find(['onMap', 'display'], (_id, [onMap, disp]) => disp.draw(onMap.pos, display, this))
+
+    // Redraw enemies so they appear on top of other things
+    this.ecs.find(['onMap', 'display', 'enemy'], (_id, [onMap, disp, _e]) => disp.draw(onMap.pos, display, this))
 
     // Draw the player
     const [px, py] = this.playerPos
@@ -178,6 +179,9 @@ export class GameState {
     if (x >= 0 && x < mx && y >= 0 && y < my) {
       if (this.navigable([x, y])) {
         this.ecs.get(this.playerId, 'onMap').pos = [x, y]
+        if (this.anyAt([x + dx, y + dy], ['enemy'])) {
+          stabEnemy(this, [x + dx, y + dy])
+        }
       } else {
         this.bumpAll([x, y])
       }
@@ -187,16 +191,14 @@ export class GameState {
   }
 
   navigable(loc) {
-    return this.map.at(loc).type === 'floor'
+    return this.map.at(loc).type === 'floor' && !this.anyAt(loc, ['enemy'])
   }
 
   bumpAll(loc) {
     if (this.map.at(loc).type === 'floor') {
-      const ids = this.idsAt(loc)
-      ids.forEach((id) => {
-        const fn = this.ecs.get(id, 'bumpable')
-        fn && fn(id)
-      })
+      if (this.anyAt(loc, ['enemy'])) {
+        this.ecs.forEach(this.idsAt(loc), ['enemy'], (id, [_e]) => bumpEnemy(this, id))
+      }
     } else { // The map only contains walls and floors, so...
       this.mine(loc)
     }
@@ -258,7 +260,9 @@ export class GameState {
       const ml = map.validMossPosition() // Both of these can go anywhere on empty floor
       const key = this.toKey(ml)      
       if (!mobLocs[key] && pKey !== key) { // Prevent it from spawning a mob underneath us
-        makeEnemy(this.ecs, ml, elitesPlaced < eliteCount ? 'elite' : 'enemy')
+        const id = makeEnemy(this.ecs, ml, elitesPlaced < eliteCount ? 'elite' : 'enemy')
+        // Guy is visible at the start, he starts active
+        if (this.map.isVisible(ml)) { this.ecs.get(id, 'enemy').active = true }
         elitesPlaced++
         mobLocs[key] = true
       }
@@ -270,12 +274,12 @@ export class GameState {
     inv.stackLimit = 1000
     inv.inventoryLimit = 1000
     const rooms = {}
-    if (DEBUG) {
-      rooms.gym = true
-      rooms.forge = true
-      rooms.garden = true
-      rooms.workbench = true
-    }
+    /* if (DEBUG) {
+     *   rooms.gym = true
+     *   rooms.forge = true
+     *   rooms.garden = true
+     *   rooms.workbench = true
+     * } */
     return this.ecs.add({ inventory: inv, rooms })
   }
 
@@ -290,6 +294,7 @@ export class GameState {
 
   // Return whether any entities at the location have a certain set of components
   anyAt(loc, query) {
+    if (!this.map.inBounds(loc)) { return false }
     let any = false
     this.ecs.forEach(this.idsAt(loc), query, () => (any = true))
     return any
@@ -406,11 +411,9 @@ export class GameState {
     this.updateIndex()
     this.map.calculateVisible(this.playerPos)
 
-    if (Rot.RNG.getUniform() < 0.1 * this.map.level) {
+    if (Rot.RNG.getUniform() < 0.05 * this.map.level) {
       const type = (Rot.RNG.getUniform() < 0.1 * this.map.level) ? 'elite' : 'enemy'
       const id = makeEnemy(this.ecs, this.map.unseenPosition(), type)
-      this.ecs.get(id, 'enemy').active = true
-      this.debug(`Spawning a new ${type}`)
     }
 
     tickEnemies(this)
