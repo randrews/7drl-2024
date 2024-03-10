@@ -405,6 +405,14 @@ export class GameState {
   tick() {
     this.updateIndex()
     this.map.calculateVisible(this.playerPos)
+
+    if (Rot.RNG.getUniform() < 0.1 * this.map.level) {
+      const type = (Rot.RNG.getUniform() < 0.1 * this.map.level) ? 'elite' : 'enemy'
+      const id = makeEnemy(this.ecs, this.map.unseenPosition(), type)
+      this.ecs.get(id, 'enemy').active = true
+      this.debug(`Spawning a new ${type}`)
+    }
+
     tickEnemies(this)
     this.checkGameEnd()
   }

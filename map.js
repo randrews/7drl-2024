@@ -196,6 +196,10 @@ export default class Map {
   validGemPosition() {
     return this.randomCell((c, l) => (rockP(c) && !this.neighbor(l[0], l[1], floorP)))
   }
+
+  unseenPosition() {
+    return this.randomCell((c, l) => (floorP(c) && !this.isVisible(l)))
+  }
 }
 
 // Some filters for common use

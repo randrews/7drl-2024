@@ -113,7 +113,7 @@ function Game({ game }) {
   - [EW] leather dropped by killing mobs, 25% chance
   - [DONE] better pick is the only one that can mine gems and mithril
   - [DONE] n mithril ingots + m gems = amulet of yendor
-  - buy gloves: auto-pickup mined ore / gems (not rocks / qtz) $25
+  - [NAH] buy gloves: auto-pickup mined ore / gems (not rocks / qtz) $25
   - [DONE] buy better packs: more inv slots (expensive though, $25 -> 5, $50 -> 10)
   - [DONE] buy health potions, refill health to full, $1
   - [DONE] climbing down to lower levels
