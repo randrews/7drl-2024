@@ -1,4 +1,5 @@
 import { OnMap, Named, Display, Carryable, Sellable } from './components'
+import { Enemy } from './enemy'
 
 // Not EVERY type... but things with a lot of components,
 // where we create them in more than one place, we'll have
@@ -39,5 +40,14 @@ export function makePotion(ecs) {
     named: new Named('potion'),
     carryable: new Carryable('potion'),
     display: new Display('potion')
+  })
+}
+
+export function makeEnemy(ecs, loc, type) {
+  return ecs.add({
+    onMap: new OnMap(loc),
+    named: new Named(type),
+    display: new Display(type),
+    enemy: new Enemy(type)
   })
 }

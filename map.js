@@ -15,7 +15,7 @@ export default class Map {
     this.level = level
     this.gemsVisible = gemsVisible
 
-    // Draw some cessular caverns
+    // Draw some cellular caverns
     const cave = new Rot.Map.Cellular(w, h)
     cave.randomize(0.5)
     for (let i = 0; i < 6; i++) { cave.create() }
@@ -25,6 +25,9 @@ export default class Map {
     cave.connect((x, y, empty) => {
       this.data[x + y * this.w] = { type: empty ? 'floor' : 'wall' }
     }, 1)
+
+    this.emptyCallback = (x, y) => this.inBounds([x, y]) && floorP(this.at([x, y]))
+    this.fov = new Rot.FOV.PreciseShadowcasting(this.emptyCallback)
 
     // Place ore veins
     let ores = { copper: 25, iron: 0, mithril: 0 }
@@ -53,6 +56,9 @@ export default class Map {
     // Hide the cells in interior walls
     this.calculateExposed()
 
+    // Prime the FOV, we'll store a list of visible cells here
+    this.visible = []
+
     // populate hp and hardness
     this.eachCell((_x, _y, cell) => {
         if (cell.type === 'wall') {
@@ -72,8 +78,12 @@ export default class Map {
     return this.data[x + y * this.w]
   }
 
+  inBounds([x, y]) {
+    return x >= 0 && y >= 0 && x < this.w && y < this.h
+  }
+
   put([x, y], val) {
-    this.data[x + y * this.w] = val
+    this.inBounds([x, y]) && (this.data[x + y * this.w] = val)
   }
 
   // Loop through each cell, invoking a callback(x, y, cell)
@@ -91,6 +101,33 @@ export default class Map {
         cell.exposed = this.neighbor(x, y, floorP) || (this.gemsVisible && cell.ore === 'gem')
       }
     })
+  }
+
+  calculateVisible(playerLoc) {
+    this.visible = []
+    this.fov.compute(playerLoc[0], playerLoc[1], 100, (x, y) => (this.inBounds([x, y]) && this.visible.push(x + y * this.w)))
+  }
+
+  isVisible([x, y]) {
+    return this.visible.indexOf(x + y * this.w) !== -1
+  }
+
+  moveToward(start, finish, emptyP) {
+    let dir = null
+    const passable = (x, y) => {
+      if (x === start[0] && y === start[1]) { return true } // it always calls us with the start cell first...?
+      if (!this.emptyCallback(x, y)) { return false } // If there's actually a wall, stop
+      return emptyP([x, y]) // User supplied callback, usually "is there another mob here"
+    }
+    const path = new Rot.Path.AStar(finish[0], finish[1], passable, { topology: 4 })
+    // This computes the _whole path_ even though we only want the first cell, so, ignore
+    // oll but the first call to the callback. This would be a good change to the rot.js API
+    path.compute(start[0], start[1], (x, y) => {
+      if (dir) { return }
+      if (x === start[0] && y === start[1] || x === finish[0] && y === finish[1]) { return }
+      dir = [x, y]
+    })
+    return dir
   }
 
   // Returns whether the cell at the given coordinate has a neighbor that fits the filter

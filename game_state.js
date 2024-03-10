@@ -1,10 +1,12 @@
 import Map from './map'
 import ECS from './ecs'
 import * as Rot from 'rot-js'
-import { OnMap, Named, Display, Carryable, Inventory, Drinkable, Wallet, Player } from './components'
+import { OnMap, Named, Display, Carryable, Wallet, Player } from './components'
+import { Inventory } from './inventory'
+import { tickEnemies } from './enemy'
 import { COLORS, DEBUG } from './balance'
 import Actions from './actions'
-import { makeMineral, makeMoss } from './types'
+import { makeMineral, makeMoss, makeEnemy } from './types'
 import * as Workshop from './workshop'
 
 export class GameState {
@@ -39,6 +41,11 @@ export class GameState {
 
     // Throw some moss on the ground
     this.makeMoss(map, 10)
+
+    // Add mobs
+    this.makeMobs(map, pos)
+
+    map.calculateVisible(pos)
   }
 
   draw(display) {
@@ -48,7 +55,7 @@ export class GameState {
     // Draw non-player objects on the map
     this.ecs.find(['onMap', 'display'], (_id, [onMap, disp]) => {
       const pos = [onMap.x, onMap.y]
-      disp.draw(pos, display)
+      disp.draw(pos, display, this)
     })
 
     // Draw the player
@@ -59,24 +66,28 @@ export class GameState {
   // Draw the map on to a Rot.Display
   drawMap(display) {
     this.map.eachCell((x, y, cell) => {
-      switch (cell.type) {
-        case 'floor':
-          display.draw(x, y, ' ')
-          break
-        case 'wall':
-          if (!cell.exposed) {
-            display.draw(x, y, '#', '#555')
-          } else if (!cell.ore) {
-            display.draw(x, y, '#', '#ddd')
-          } else {
-            switch (cell.ore) {
-              case 'copper': display.draw(x, y, '#', COLORS.copper); break
-              case 'iron': display.draw(x, y, '#', COLORS.iron); break
-              case 'mithril': display.draw(x, y, '#', COLORS.mithril); break
-              case 'gem': display.draw(x, y, '*', COLORS.gem); break
+      if (this.map.isVisible([x, y])) {
+        switch (cell.type) {
+          case 'floor':
+            display.draw(x, y, ' ')
+            break
+          case 'wall':
+            if (!cell.exposed) {
+              display.draw(x, y, '#', '#555')
+            } else if (!cell.ore) {
+              display.draw(x, y, '#', '#ddd')
+            } else {
+              switch (cell.ore) {
+                case 'copper': display.draw(x, y, '#', COLORS.copper); break
+                case 'iron': display.draw(x, y, '#', COLORS.iron); break
+                case 'mithril': display.draw(x, y, '#', COLORS.mithril); break
+                case 'gem': display.draw(x, y, '*', COLORS.gem); break
+              }
             }
-          }
-          break
+            break
+        }
+      } else {
+        display.draw(x, y, '+', '#000', '#555')
       }
     })
   }
@@ -90,20 +101,25 @@ export class GameState {
 
   // Show a helpful string for what we're hovering the mouse over
   hover(pos) {
+    const visible = this.map.isVisible(pos)
+
     // First try the index:
     const ent = this.idsAt(pos)[0]
     if (ent) {
-      return this.ecs.get(ent, 'named').hover
+      const comp = this.ecs.get(ent, 'named')
+      if (visible || comp.type === 'ladder' || comp.type === 'gem' && playerStats.hasSensor) {
+        return comp.hover
+      }
     } else {
       const cell = this.map.at(pos)
       if (!cell) { return } // Layout / font size issue on Linux
       switch (cell.type) {
-      case 'wall':
-        if (!cell.exposed) { return '' } // Hidden is hidden!
-        else if (cell.ore === 'gem') { return 'gem' } // Show ore types
-        else if (cell.ore) { return `${cell.ore} ore` } // Show ore types
-        else { return 'rock' } // plain old rock
-        break
+        case 'wall':
+          if (!cell.exposed || !visible) { return '' } // Hidden is hidden!
+          else if (cell.ore === 'gem') { return 'gem' } // Show ore types
+          else if (cell.ore) { return `${cell.ore} ore` } // Show ore types
+          else { return 'rock' } // plain old rock
+          break
       }
     }
   }
@@ -231,7 +247,24 @@ export class GameState {
       }
     }
   }
-  
+
+  makeMobs(map, playerPos) {
+    const pKey = this.toKey(playerPos)
+    const eliteCount = map.level
+    let elitesPlaced = 0
+    const mobCount = map.level * 3
+    let mobLocs = {}
+    while (Object.keys(mobLocs).length < eliteCount + mobCount) {
+      const ml = map.validMossPosition() // Both of these can go anywhere on empty floor
+      const key = this.toKey(ml)      
+      if (!mobLocs[key] && pKey !== key) { // Prevent it from spawning a mob underneath us
+        makeEnemy(this.ecs, ml, elitesPlaced < eliteCount ? 'elite' : 'enemy')
+        elitesPlaced++
+        mobLocs[key] = true
+      }
+    }
+  }
+
   makeWorkshop() {
     const inv = new Inventory(this.ecs)
     inv.stackLimit = 1000
@@ -370,6 +403,9 @@ export class GameState {
   }
 
   tick() {
+    this.updateIndex()
+    this.map.calculateVisible(this.playerPos)
+    tickEnemies(this)
     this.checkGameEnd()
   }
 
