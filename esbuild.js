@@ -1,4 +1,4 @@
-const dev = true
+const dev = false
 require('esbuild').build({
   entryPoints: ['main.jsx'],
   bundle: true,

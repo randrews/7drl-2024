@@ -1,2 +1,2 @@
 npm run bundle
-cp index.html main.css build
+cp index.html help.html main.css build

@@ -203,7 +203,7 @@ function Victory() {
   return (
     <div className='victory'>
       You win!<br/><br/>
-      You have crafted the Amulet of Yendor, and can now retire as a legendary craftsman.
+      You have crafted the Amulet of Sevendral, and can now retire as a legendary craftsman.
       This magnificent artifact will be treasured and sought after by adventurers for centuries to come.<br/><br/>
       Congratulations!
     </div>

@@ -27,6 +27,12 @@ a:visited { color: #ff9090; }
     background: #1a1713;
 }
 
+.help {
+    overflow: auto;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
 .game {
     height: 100%;
     width: 100%;
