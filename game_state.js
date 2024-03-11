@@ -24,7 +24,7 @@ export class GameState {
     this.workshopId = this.makeWorkshop()
 
     // ui state:
-    this.logLines = []
+    this.logLines = ['Welcome to Craftsman of Sevendral. Good luck with your quest!']
     this.selectMode = false
     this.pendingAction = null
     this.inputHandler = null
