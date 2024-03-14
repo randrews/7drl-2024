@@ -21,6 +21,7 @@ export function workshopOptions(ecs, workshopId, playerId) {
   const money = ecs.get(playerId, 'wallet').amount
   const rocks = stockpile.countType('rock')
   const quartz = stockpile.countType('quartz')
+  const gems = stockpile.countType('gem')
   const moss = stockpile.countType('moss')
   const cu = stockpile.countType('copper ore')
   const fe = stockpile.countType('iron ore')

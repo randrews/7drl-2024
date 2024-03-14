@@ -55,7 +55,7 @@ export class Display {
 
   draw([x, y], display, game) {
     const visible = game.map.isVisible([x, y])
-    const sensor = game.playerStats
+    const sensor = game.playerStats.hasSensor
 
     switch (this.type) {
       case 'ladder':
@@ -131,6 +131,6 @@ export class Player {
   }
 
   get hasSensor() {
-    this.gear.indexOf('gem sensor') !== -1
+    return this.gear.indexOf('gem sensor') !== -1
   }
 }

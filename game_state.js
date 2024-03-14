@@ -67,7 +67,9 @@ export class GameState {
   // Draw the map on to a Rot.Display
   drawMap(display) {
     this.map.eachCell((x, y, cell) => {
-      if (this.map.isVisible([x, y])) {
+      if (this.playerStats.hasSensor && cell.type === 'wall' && cell.ore === 'gem') {
+        display.draw(x, y, '*', COLORS.gem);
+      } else if (this.map.isVisible([x, y])) {
         switch (cell.type) {
           case 'floor':
             display.draw(x, y, ' ')
@@ -373,6 +375,14 @@ export class GameState {
 
   enterWorkshop() {
     this.gameMode = 'workshop'
+
+    // Remove any inactive mobs:
+    const toRemove = []
+    this.ecs.find(['onMap', 'enemy'], (id, [onMap, enemy]) => {
+      if (!enemy.active) { toRemove.push(id) }
+    })
+    toRemove.forEach(id => this.ecs.remove(id))
+    this.updateIndex()
 
     // Empty inventory into ore buckets
     const toDump = []
